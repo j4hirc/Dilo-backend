@@ -17,7 +17,6 @@ public class UsuarioResponseDTO {
 
     private String segundoNombre;
 
-
     private String apellidoPaterno;
 
     private String apellidoMaterno;
