@@ -1,11 +1,13 @@
-package com.example.dilo.DiloBackend.dto.request;
+package com.example.dilo.DiloBackend.dto.response;
 
 import lombok.Data;
+
 import java.time.LocalDate;
 
 @Data
-public class RegisterUserDTO {
+public class UsuarioResponseDTO {
 
+    private Long id;
 
     private String dni;
 
@@ -31,4 +33,6 @@ public class RegisterUserDTO {
     private String direccion;
 
     private Long id_parroquia;
+
+    private String nameParroquia;
 }
