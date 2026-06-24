@@ -1,7 +1,10 @@
 package com.example.dilo.DiloBackend.controller;
 
+import com.example.dilo.DiloBackend.dto.request.LoginRequestDTO;
 import com.example.dilo.DiloBackend.dto.request.RegisterUserDTO;
+import com.example.dilo.DiloBackend.dto.response.AuthResponseDTO;
 import com.example.dilo.DiloBackend.dto.response.UsuarioResponseDTO;
+import com.example.dilo.DiloBackend.service.LoginService;
 import com.example.dilo.DiloBackend.service.RegistroService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,7 @@ public class AuthController {
 
 
     private final RegistroService registroService;
+    private final LoginService loginService;
 
     @PostMapping(value = "/registro", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UsuarioResponseDTO> registrarUsuario(
@@ -27,6 +31,16 @@ public class AuthController {
             UsuarioResponseDTO response = registroService.registroUsuario(datosUsuario, foto);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
 
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginDto) {
+        try {
+            AuthResponseDTO response = loginService.loginUsuario(loginDto);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas: " + e.getMessage());
+        }
     }
 
 
