@@ -9,5 +9,8 @@ import java.util.Optional;
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     @EntityGraph(attributePaths = {"parroquia"})
+    Optional<Usuario> findByDni(String username);
+
+    @EntityGraph(attributePaths = {"parroquia"})
     Optional<Usuario> findByEmail(String email);
 }

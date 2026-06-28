@@ -20,14 +20,11 @@ public class DiloSpaceRequestDTO {
     @NotBlank(message = "La razón social no puede estar vacía")
     private String razonSocial;
 
-    @NotNull(message = "El ID de la parroquia no puede ser nulo")
+    @NotNull(message = "Debe especificar si está obligado a llevar contabilidad")
     private Boolean obligadoContabilidad;
 
-    @NotBlank(message = "El path de la firma electrónica no puede estar vacío")
-    private String firmaElectronicaPath;
+    @NotBlank(message = "La contraseña de la firma no puede estar vacía")
+    private String passwordFirma;
 
-    private LocalDateTime fechaCreacion;
 
-    @NotNull(message = "El ID del usuario no puede ser nulo")
-    private Long usuarioId;
 }

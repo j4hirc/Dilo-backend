@@ -29,8 +29,14 @@ public class DiloSpace {
     @Column(name = "obligado_contabilidad")
     private Boolean obligadoContabilidad;
 
-    @Column(name = "firma_electronica_path")
-    private String firmaElectronicaPath;
+    @Column(name = "ruta_firma")
+    private String rutaFirma;
+
+    @Column(name = "password_firma")
+    private String passwordFirma;
+
+    @Column(name = "codigo_invitacion")
+    private String codigoInvitacion;
 
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
