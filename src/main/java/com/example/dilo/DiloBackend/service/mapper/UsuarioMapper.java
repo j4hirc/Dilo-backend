@@ -27,6 +27,8 @@ public class UsuarioMapper {
        return entity;
     }
 
+
+
     public UsuarioResponseDTO toDto(Usuario entity){
         UsuarioResponseDTO usuarioResponseDTO =  new UsuarioResponseDTO();
         usuarioResponseDTO.setId(entity.getId());
@@ -43,7 +45,7 @@ public class UsuarioMapper {
         usuarioResponseDTO.setDireccion(entity.getDireccion());
         usuarioResponseDTO.setId_parroquia(entity.getParroquia().getId());
         usuarioResponseDTO.setNameParroquia(entity.getParroquia().getNombre());
-return usuarioResponseDTO;
+        return usuarioResponseDTO;
     }
 
 }
