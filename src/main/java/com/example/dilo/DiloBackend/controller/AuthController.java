@@ -7,7 +7,6 @@ import com.example.dilo.DiloBackend.dto.response.UsuarioResponseDTO;
 import com.example.dilo.DiloBackend.service.LoginService;
 import com.example.dilo.DiloBackend.service.RegistroService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

@@ -8,11 +8,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/dilo-space")
@@ -20,6 +19,18 @@ import org.springframework.web.multipart.MultipartFile;
 public class DiloSpaceController {
 
     private final DiloSpaceService diloSpaceService;
+
+    @GetMapping("/all")
+    public ResponseEntity<List<DiloSpaceResponseDTO>> getAll(){
+        List<DiloSpaceResponseDTO> diloSpaceResponseDTO = diloSpaceService.findAll();
+        return ResponseEntity.ok(diloSpaceResponseDTO);
+    }
+
+    @GetMapping("/param/{param}")
+    public ResponseEntity<DiloSpaceResponseDTO> getParam(@PathVariable String param){
+        DiloSpaceResponseDTO diloSpaceResponseDTO = diloSpaceService.findByDilo(param);
+        return ResponseEntity.ok(diloSpaceResponseDTO);
+    }
 
 
     @PostMapping(value = "/crear", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

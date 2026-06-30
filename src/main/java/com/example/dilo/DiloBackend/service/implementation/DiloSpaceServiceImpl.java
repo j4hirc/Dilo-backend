@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class DiloSpaceServiceImpl implements DiloSpaceService {
@@ -29,6 +31,23 @@ public class DiloSpaceServiceImpl implements DiloSpaceService {
     private final SupabaseStorageService storageService;
     private final RoleRepository roleRepository;
 
+
+    @Override
+    public List<DiloSpaceResponseDTO> findAll() {
+        List<DiloSpace> diloSpaces = diloSpaceRepository.findAll();
+
+        return diloSpaces.stream()
+                .map(diloSpaceMapper::toResponseDTO)
+                .toList();
+    }
+
+    @Override
+    public DiloSpaceResponseDTO findByDilo(String dilo) {
+        DiloSpace space = diloSpaceRepository.findByCualquierCampo(dilo)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró ningún DiloSpace con ese valor: " + dilo));
+
+        return diloSpaceMapper.toResponseDTO(space);
+    }
 
     @Override
     public DiloSpaceResponseDTO createDiloSpace(DiloSpaceRequestDTO diloSpaceRequestDTO, MultipartFile archivoFirma, String emailUsuario) {
