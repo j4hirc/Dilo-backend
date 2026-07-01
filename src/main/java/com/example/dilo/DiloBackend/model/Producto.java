@@ -36,4 +36,8 @@ public class Producto {
 
     @Column(name = "graba_iva")
     private Boolean grabaIva;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "negocio_id", nullable = false)
+    private Negocio negocio;
 }

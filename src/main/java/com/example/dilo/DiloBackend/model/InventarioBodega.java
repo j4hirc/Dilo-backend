@@ -29,4 +29,8 @@ public class InventarioBodega {
 
     @Column(nullable = false)
     private Integer stock;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "negocio_id", nullable = false)
+    private Negocio negocio;
 }

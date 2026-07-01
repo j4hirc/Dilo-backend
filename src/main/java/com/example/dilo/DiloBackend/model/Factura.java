@@ -60,4 +60,8 @@ public class Factura {
 
     @Column(name = "estado_sri", length = 20)
     private String estadoSri;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "negocio_id", nullable = false)
+    private Negocio negocio;
 }

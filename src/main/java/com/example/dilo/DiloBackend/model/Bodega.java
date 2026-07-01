@@ -20,4 +20,8 @@ public class Bodega {
     private String nombre;
 
     private String direccion;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "negocio_id", nullable = false)
+    private Negocio negocio;
 }
