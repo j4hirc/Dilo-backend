@@ -1,9 +1,7 @@
 package com.example.dilo.DiloBackend.data;
 
-import com.example.dilo.DiloBackend.model.MiembroEspacio;
 import com.example.dilo.DiloBackend.model.Role;
 import com.example.dilo.DiloBackend.model.Usuario;
-import com.example.dilo.DiloBackend.repository.MiembroEspacioRepository;
 import com.example.dilo.DiloBackend.repository.RoleRepository;
 import com.example.dilo.DiloBackend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;

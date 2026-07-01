@@ -16,10 +16,6 @@ public class Categoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "espacio_id", nullable = false)
-    private DiloSpace espacio;
-
     @Column(nullable = false)
     private String nombre;
 }

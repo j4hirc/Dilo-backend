@@ -3,7 +3,6 @@ package com.example.dilo.DiloBackend.service.implementation;
 import com.example.dilo.DiloBackend.dto.request.LoginRequestDTO;
 import com.example.dilo.DiloBackend.dto.response.AuthResponseDTO;
 import com.example.dilo.DiloBackend.model.Usuario;
-import com.example.dilo.DiloBackend.repository.MiembroEspacioRepository;
 import com.example.dilo.DiloBackend.repository.UsuarioRepository;
 import com.example.dilo.DiloBackend.security.jwt.JwtGenerator;
 import com.example.dilo.DiloBackend.service.LoginService;

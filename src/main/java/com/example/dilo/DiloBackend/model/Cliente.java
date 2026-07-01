@@ -17,10 +17,6 @@ public class Cliente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "espacio_id", nullable = false)
-    private DiloSpace espacio;
-
     @Column(nullable = false, length = 20)
     private String dni;
 
