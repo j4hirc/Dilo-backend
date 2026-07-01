@@ -46,10 +46,10 @@ public class RegistroServiceImpl implements RegistroService {
 
         usuario.setEstadoLaboral("Activo");
 
-        Role rolVendedor = roleRepository.findByNombre("VENDEDOR")
-                .orElseThrow(() -> new ResourceNotFoundException("Rol VENDEDOR no encontrado en la base de datos"));
+        Role rolBase = roleRepository.findByNombre("USUARIO_BASE")
+                .orElseThrow(() -> new ResourceNotFoundException("Rol USUARIO_BASE no encontrado en la base de datos"));
 
-        usuario.getRoles().add(rolVendedor);
+        usuario.getRoles().add(rolBase);
 
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
 

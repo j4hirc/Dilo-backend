@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LoginServiceImpl implements LoginService {
 
-
     private final AuthenticationManager authenticationManager;
     private final JwtGenerator jwtGenerator;
     private final UsuarioRepository usuarioRepository;
@@ -34,7 +33,8 @@ public class LoginServiceImpl implements LoginService {
         Usuario usuario = usuarioRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        boolean esSuperAdmin = miembroEspacioRepository.findSuperAdminByUsuarioId(usuario.getId()).isPresent();
+        boolean esSuperAdmin = usuario.getRoles().stream()
+                .anyMatch(rol -> rol.getNombre().equals("SUPER_ADMIN"));
 
         AuthResponseDTO response = new AuthResponseDTO();
         response.setToken(token);

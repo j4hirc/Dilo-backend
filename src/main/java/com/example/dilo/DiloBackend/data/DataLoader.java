@@ -23,7 +23,7 @@ public class DataLoader implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
 
-        List<String> rolesToCreate = Arrays.asList("SUPER_ADMIN", "PROPIETARIO", "VENDEDOR", "BODEGUERO");
+        List<String> rolesToCreate = Arrays.asList("SUPER_ADMIN", "PROPIETARIO", "VENDEDOR", "BODEGUERO", "USUARIO_BASE");
 
         for (String roleName : rolesToCreate) {
             roleRepository.findByNombre(roleName).orElseGet(() -> {
