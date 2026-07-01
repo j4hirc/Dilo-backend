@@ -20,7 +20,6 @@ public class LoginServiceImpl implements LoginService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtGenerator jwtGenerator;
-    private final MiembroEspacioRepository miembroEspacioRepository;
     private final UsuarioRepository usuarioRepository;
 
     @Override
