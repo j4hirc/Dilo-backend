@@ -2,11 +2,16 @@ package com.example.dilo.DiloBackend.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Data
 @Entity
 @Table(name = "negocios")
+@NoArgsConstructor
+@RequiredArgsConstructor
 public class Negocio {
 
     @Id
@@ -34,5 +39,4 @@ public class Negocio {
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
-    public Negocio() {}
 }

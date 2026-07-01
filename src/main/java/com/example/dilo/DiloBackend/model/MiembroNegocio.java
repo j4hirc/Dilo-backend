@@ -2,11 +2,16 @@ package com.example.dilo.DiloBackend.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Data
 @Entity
 @Table(name = "miembros_negocio")
+@NoArgsConstructor
+@RequiredArgsConstructor
 public class MiembroNegocio {
 
     @Id

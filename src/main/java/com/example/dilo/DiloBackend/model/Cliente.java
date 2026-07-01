@@ -38,5 +38,10 @@ public class Cliente {
     private LocalDate fechaNacimiento;
 
     private String telefono;
+
     private String direccion;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "negocio_id", nullable = false)
+    private Negocio negocio;
 }
