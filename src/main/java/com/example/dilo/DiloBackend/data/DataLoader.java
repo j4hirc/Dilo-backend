@@ -19,11 +19,9 @@ public class DataLoader implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-    private final MiembroEspacioRepository miembroEspacioRepository;
 
     @Override
     public void run(String... args) throws Exception {
-
 
         List<String> rolesToCreate = Arrays.asList("SUPER_ADMIN", "PROPIETARIO", "VENDEDOR", "BODEGUERO");
 
@@ -36,7 +34,6 @@ public class DataLoader implements CommandLineRunner {
             });
         }
 
-        Role superAdminRole = roleRepository.findByNombre("SUPER_ADMIN").get();
         if (usuarioRepository.findByEmail("admin@dilo.com").isEmpty()) {
 
             Usuario admin = new Usuario();
@@ -46,18 +43,16 @@ public class DataLoader implements CommandLineRunner {
             admin.setEmail("admin@dilo.com");
             admin.setPassword(passwordEncoder.encode("admin123"));
 
-            admin = usuarioRepository.save(admin);
+            admin.setEstadoLaboral("Activo");
 
-            MiembroEspacio miembroEspacio = new MiembroEspacio();
-            miembroEspacio.setUsuario(admin);
-            miembroEspacio.setRol(superAdminRole);
-            miembroEspacio.setEspacio(null);
-            miembroEspacio.setEstadoInvitacion("ACEPTADO");
+            for (String roleName : rolesToCreate) {
+                roleRepository.findByNombre(roleName)
+                        .ifPresent(rol -> admin.getRoles().add(rol));
+            }
 
-            miembroEspacioRepository.save(miembroEspacio);
+            usuarioRepository.save(admin);
 
-            System.out.println("Roles iniciales y Usuario Super Admin creados con éxito.");
+            System.out.println("Roles iniciales y Usuario Super Admin creados con éxito con TODOS los roles asignados.");
         }
-
     }
 }

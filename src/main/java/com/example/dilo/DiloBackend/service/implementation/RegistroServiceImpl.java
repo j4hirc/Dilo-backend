@@ -4,8 +4,10 @@ import com.example.dilo.DiloBackend.dto.request.RegisterUserDTO;
 import com.example.dilo.DiloBackend.dto.response.UsuarioResponseDTO;
 import com.example.dilo.DiloBackend.exception.ResourceNotFoundException;
 import com.example.dilo.DiloBackend.model.Parroquia;
+import com.example.dilo.DiloBackend.model.Role;
 import com.example.dilo.DiloBackend.model.Usuario;
 import com.example.dilo.DiloBackend.repository.ParroquiaRepository;
+import com.example.dilo.DiloBackend.repository.RoleRepository;
 import com.example.dilo.DiloBackend.repository.UsuarioRepository;
 import com.example.dilo.DiloBackend.service.RegistroService;
 import com.example.dilo.DiloBackend.service.mapper.UsuarioMapper;
@@ -23,7 +25,7 @@ public class RegistroServiceImpl implements RegistroService {
     private final PasswordEncoder passwordEncoder;
     private final UsuarioMapper usuarioMapper;
     private final ParroquiaRepository parroquiaRepository;
-
+    private final RoleRepository roleRepository;
 
     @Override
     public UsuarioResponseDTO registroUsuario(RegisterUserDTO registerUserDTO, MultipartFile foto) {
@@ -41,6 +43,14 @@ public class RegistroServiceImpl implements RegistroService {
 
         Usuario usuario = usuarioMapper.toEntity(registerUserDTO, parroquia);
         usuario.setPassword(passwordEncoder.encode(registerUserDTO.getPassword()));
+
+        usuario.setEstadoLaboral("Activo");
+
+
+        Role rolVendedor = roleRepository.findByNombre("VENDEDOR")
+                .orElseThrow(() -> new ResourceNotFoundException("Rol VENDEDOR no encontrado en la base de datos"));
+
+        usuario.getRoles().add(rolVendedor);
 
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
 
