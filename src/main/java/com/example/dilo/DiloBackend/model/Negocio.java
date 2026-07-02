@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @Entity
@@ -28,7 +29,7 @@ public class Negocio {
     private String nombreComercial;
 
     @Column(name = "obligado_contabilidad")
-    private boolean obligadoContabilidad = false;
+    private Boolean obligadoContabilidad;
 
     @Column(name = "ruta_firma")
     private String rutaFirma;
@@ -36,7 +37,17 @@ public class Negocio {
     @Column(name = "password_firma")
     private String passwordFirma;
 
+    @Column(name = "codigo_invitacion", unique = true, nullable = false)
+    private String codigoInvitacion;
+
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion = LocalDateTime.now();
+
+    @PrePersist
+    public void generarCodigoInvitacion() {
+        if (this.codigoInvitacion == null || this.codigoInvitacion.isEmpty()) {
+            this.codigoInvitacion = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+    }
 
 }

@@ -1,25 +1,27 @@
 package com.example.dilo.DiloBackend.dto.request;
 
-import jakarta.persistence.Column;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 @Data
 public class NegocioRequestDTO {
 
-
+    @NotBlank(message = "El RUC es obligatorio")
     private String ruc;
 
+    @NotBlank(message = "La razón social es obligatoria")
     private String razonSocial;
 
+    @NotBlank(message = "El nombre comercial es obligatorio")
     private String nombreComercial;
 
-    private boolean obligadoContabilidad = false;
+    @NotNull(message = "Debe especificar si está obligado a llevar contabilidad")
+    private Boolean obligadoContabilidad;
 
     private String rutaFirma;
 
+    @NotBlank(message = "La contraseña de la firma es obligatorio")
     private String passwordFirma;
 
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
 }
