@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class NegocioServiceImpl implements NegocioService {
@@ -29,6 +31,34 @@ public class NegocioServiceImpl implements NegocioService {
     private final SupabaseStorageService storageService;
     private final NegocioMapper negocioMapper;
 
+
+    @Override
+    public List<NegocioResponseDTO> getAll() {
+        List<Negocio> negocios = negocioRepository.findAll();
+        return negocios.stream()
+                .map(negocioMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    public NegocioResponseDTO findById(Long id) {
+        Negocio negocio = negocioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
+        return negocioMapper.toDto(negocio);
+    }
+
+    @Override
+    public List<NegocioResponseDTO> findByTerm(String term) {
+        List<Negocio> negocios = negocioRepository.buscarPorTermino(term);
+
+        if (negocios.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron negocios con el término: " + term);
+        }
+
+        return negocios.stream()
+                .map(negocioMapper::toDto)
+                .toList();
+    }
 
     @Override
     public NegocioResponseDTO createNegocio(NegocioRequestDTO negocioRequestDTO, MultipartFile firma, String email) {
