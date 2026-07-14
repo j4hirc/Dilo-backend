@@ -1,6 +1,7 @@
 package com.example.dilo.DiloBackend.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +12,13 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "miembros_negocio")
 @NoArgsConstructor
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class MiembroNegocio {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id", nullable = false)
@@ -35,4 +37,6 @@ public class MiembroNegocio {
 
     @Column(name = "fecha_vinculacion")
     private LocalDateTime fechaVinculacion;
+
+
 }

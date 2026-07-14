@@ -15,5 +15,11 @@ public interface NegocioService {
     List<NegocioResponseDTO> findByTerm(String term);
 
 
-    NegocioResponseDTO createNegocio(NegocioRequestDTO negocioRequestDTO, MultipartFile firma, String email);
+    NegocioResponseDTO createNegocio(NegocioRequestDTO negocioRequestDTO, MultipartFile firma, MultipartFile imagen, String email);
+
+    NegocioResponseDTO updateNegocio(Long id, NegocioRequestDTO negocioRequestDTO, MultipartFile firma, MultipartFile imagen);
+
+    void deleteNegocio(Long id);
+
+
 }

@@ -61,7 +61,7 @@ public class NegocioServiceImpl implements NegocioService {
     }
 
     @Override
-    public NegocioResponseDTO createNegocio(NegocioRequestDTO negocioRequestDTO, MultipartFile firma, String email) {
+    public NegocioResponseDTO createNegocio(NegocioRequestDTO negocioRequestDTO, MultipartFile firma, MultipartFile imagen, String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado en el sistema"));
 
@@ -74,6 +74,15 @@ public class NegocioServiceImpl implements NegocioService {
             }
         } catch (Exception e) {
             throw new RuntimeException("Error crítico al subir la firma electrónica: " + e.getMessage());
+        }
+
+        try {
+            if (imagen != null && !imagen.isEmpty()) {
+                String urlImagen = storageService.uploadFile(imagen, "logos");
+                negocio.setRutaImagen(urlImagen);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error crítico al subir la imagen del negocio: " + e.getMessage());
         }
 
         if (negocioRequestDTO.getPasswordFirma() != null && !negocioRequestDTO.getPasswordFirma().isBlank()) {
@@ -95,5 +104,51 @@ public class NegocioServiceImpl implements NegocioService {
         miembroNegocioRepository.save(nuevoJefe);
 
         return negocioMapper.toDto(negocioGuardado);
+    }
+
+
+    @Override
+    public NegocioResponseDTO updateNegocio(Long id, NegocioRequestDTO requestDTO, MultipartFile firma, MultipartFile imagen) {
+        Negocio negocioExistente = negocioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado con ID: " + id));
+
+        negocioExistente.setRuc(requestDTO.getRuc());
+        negocioExistente.setRazonSocial(requestDTO.getRazonSocial());
+        negocioExistente.setNombreComercial(requestDTO.getNombreComercial());
+        negocioExistente.setObligadoContabilidad(requestDTO.getObligadoContabilidad());
+
+        try {
+            if (firma != null && !firma.isEmpty()) {
+                String urlFirma = storageService.uploadFile(firma, "firmas");
+                negocioExistente.setRutaFirma(urlFirma);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al subir la nueva firma electrónica: " + e.getMessage());
+        }
+
+        try {
+            if (imagen != null && !imagen.isEmpty()) {
+                String urlImagen = storageService.uploadFile(imagen, "logos");
+                negocioExistente.setRutaImagen(urlImagen);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al subir la nueva imagen: " + e.getMessage());
+        }
+
+        if (requestDTO.getPasswordFirma() != null && !requestDTO.getPasswordFirma().isBlank()) {
+            String passwordEncriptada = firmaEncryptionService.encriptar(requestDTO.getPasswordFirma());
+            negocioExistente.setPasswordFirma(passwordEncriptada);
+        }
+
+        Negocio negocioActualizado = negocioRepository.save(negocioExistente);
+        return negocioMapper.toDto(negocioActualizado);
+    }
+
+    @Override
+    public void deleteNegocio(Long id) {
+        Negocio negocio = negocioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(   "Negocio no encontrado con ID: " + id));
+
+        negocioRepository.delete(negocio);
     }
 }

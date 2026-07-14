@@ -25,4 +25,6 @@ public class NegocioResponseDTO {
 
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
+    private String rutaImagen;
+
 }

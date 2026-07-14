@@ -1,6 +1,7 @@
 package com.example.dilo.DiloBackend.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "negocios")
 @NoArgsConstructor
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class Negocio {
 
     @Id
@@ -21,6 +22,9 @@ public class Negocio {
 
     @Column(nullable = false, unique = true)
     private String ruc;
+
+    @Column(name = "ruta_imagen")
+    private String rutaImagen;
 
     @Column(name = "razon_social", nullable = false)
     private String razonSocial;

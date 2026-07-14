@@ -28,6 +28,7 @@ public class NegocioMapper {
         negocioResponseDTO.setObligadoContabilidad(entity.getObligadoContabilidad());
         negocioResponseDTO.setCodigoInvitacion(entity.getCodigoInvitacion());
         negocioResponseDTO.setRutaFirma(entity.getRutaFirma());
+        negocioResponseDTO.setRutaImagen(entity.getRutaImagen());
         return negocioResponseDTO;
     }
 
