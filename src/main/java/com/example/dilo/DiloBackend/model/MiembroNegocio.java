@@ -33,10 +33,13 @@ public class MiembroNegocio {
     private Role rol;
 
     @Column(name = "estado_laboral", nullable = false)
-    private String estadoLaboral = "Activo";
+    private String estadoLaboral;
 
     @Column(name = "fecha_vinculacion")
     private LocalDateTime fechaVinculacion;
+
+    @Column(name = "estado_invitacion")
+    private String estadoInvitacion;
 
 
 }
