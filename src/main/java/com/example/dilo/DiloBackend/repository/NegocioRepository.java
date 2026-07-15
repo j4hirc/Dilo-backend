@@ -16,4 +16,6 @@ public interface NegocioRepository extends JpaRepository<Negocio, Long> {
             "LOWER(n.nombreComercial) LIKE LOWER(CONCAT('%', :term, '%'))")
     List<Negocio> buscarPorTermino(@Param("term") String term);
 
+    Optional<Negocio> findByCodigoInvitacion(String codigoInvitacion);
+
 }

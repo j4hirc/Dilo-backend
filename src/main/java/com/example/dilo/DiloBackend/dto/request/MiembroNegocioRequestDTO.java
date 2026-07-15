@@ -21,5 +21,4 @@ public class MiembroNegocioRequestDTO {
 
     private String estadoInvitacion;
 
-    private LocalDateTime fechaVinculacion;
 }

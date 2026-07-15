@@ -9,14 +9,12 @@ import java.time.LocalDateTime;
 @Data
 public class MiembroNegocioResponseDTO {
 
-    private Long nombreUsuario;
-    private Long NombreNegocio;
-    private Long nombreRol;
-
+    private Long id;
+    private Long usuarioId;
+    private String nombreUsuario;
+    private String emailUsuario;
+    private String rol;
     private String estadoLaboral;
-
     private String estadoInvitacion;
-
     private LocalDateTime fechaVinculacion;
-
 }
