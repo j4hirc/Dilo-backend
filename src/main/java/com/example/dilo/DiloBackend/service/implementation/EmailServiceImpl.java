@@ -1,33 +1,30 @@
 package com.example.dilo.DiloBackend.service.implementation;
 
 import com.example.dilo.DiloBackend.service.EmailService;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import java.io.UnsupportedEncodingException;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    @Value("${brevo.api.key}")
-    private String brevoApiKey;
+    private final JavaMailSender mailSender;
 
+    // Aquí leemos el correo que agregaste en el properties
     @Value("${brevo.sender.email}")
     private String senderEmail;
 
     @Value("${brevo.sender.name}")
     private String senderName;
-
-    private final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
-    private final RestTemplate restTemplate = new RestTemplate();
 
     @Async
     @Override
@@ -48,7 +45,7 @@ public class EmailServiceImpl implements EmailService {
                 producto, bodega, cantidadActual, stockMinimo
         );
 
-        enviarPeticionBrevo(destinatarios, subject, htmlContent);
+        enviarPeticionSmtp(destinatarios, subject, htmlContent);
     }
 
     @Async
@@ -56,7 +53,6 @@ public class EmailServiceImpl implements EmailService {
     public void enviarFacturaSri(String emailCliente, String nombreCliente, String numeroFactura) {
         String subject = "Su Factura Electrónica #" + numeroFactura;
 
-        // El texto incluye el recordatorio del SRI tal como lo planeaste
         String htmlContent = String.format(
                 "<h3>Estimado/a %s,</h3>" +
                         "<p>Adjunto a este correo encontrará los detalles de su factura electrónica <b>#%s</b>.</p>" +
@@ -66,31 +62,26 @@ public class EmailServiceImpl implements EmailService {
                 nombreCliente, numeroFactura
         );
 
-        enviarPeticionBrevo(List.of(emailCliente), subject, htmlContent);
+        enviarPeticionSmtp(List.of(emailCliente), subject, htmlContent);
     }
 
-    private void enviarPeticionBrevo(List<String> destinatarios, String subject, String htmlContent) {
+    private void enviarPeticionSmtp(List<String> destinatarios, String subject, String htmlContent) {
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("api-key", brevoApiKey);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            List<Map<String, String>> toList = destinatarios.stream()
-                    .map(email -> Map.of("email", email))
-                    .collect(Collectors.toList());
+            helper.setFrom(senderEmail, senderName);
+            helper.setTo(destinatarios.toArray(new String[0]));
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
 
-            Map<String, Object> body = Map.of(
-                    "sender", Map.of("name", senderName, "email", senderEmail),
-                    "to", toList,
-                    "subject", subject,
-                    "htmlContent", htmlContent
-            );
+            mailSender.send(message);
+            System.out.println("✅ Correo SMTP enviado exitosamente vía Brevo a: " + destinatarios);
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-            restTemplate.exchange(BREVO_API_URL, HttpMethod.POST, entity, String.class);
-
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            System.err.println("❌ Error construyendo el correo SMTP: " + e.getMessage());
         } catch (Exception e) {
-            System.err.println("Error al enviar correo vía Brevo: " + e.getMessage());
+            System.err.println("❌ Error general al enviar correo SMTP: " + e.getMessage());
         }
     }
 }

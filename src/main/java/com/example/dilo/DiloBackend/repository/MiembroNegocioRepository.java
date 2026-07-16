@@ -33,7 +33,7 @@ public interface MiembroNegocioRepository extends JpaRepository<MiembroNegocio, 
     @EntityGraph(attributePaths = {"usuario", "rol", "negocio"})
     boolean existsByUsuarioIdAndNegocioId(Long usuarioId, Long negocioId);
 
-    @Query("SELECT u.email FROM MiembroNegocio mn JOIN mn.usuario u JOIN mn.rol r WHERE mn.negocio.id = :negocioId AND r.nombre IN :roles AND mn.estadoLaboral = 'ACTIVO'")
+    @Query("SELECT u.email FROM MiembroNegocio mn JOIN mn.usuario u JOIN mn.rol r WHERE mn.negocio.id = :negocioId AND r.nombre IN :roles AND UPPER(mn.estadoLaboral) = 'ACTIVO'")
     List<String> findCorreosByNegocioAndRoles(@Param("negocioId") Long negocioId, @Param("roles") List<String> roles);
 
 }

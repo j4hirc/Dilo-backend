@@ -163,8 +163,15 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
     private void verificarStockCritico(InventarioBodega inventario, Long negocioId) {
         if (inventario.getCantidadActual() <= inventario.getStockMinimo()) {
 
-            List<String> rolesNotificacion = List.of("PROPIETARIO", "BODEGUERO");
+            List<String> rolesNotificacion = List.of("PROPIETARIO", "ROLE_PROPIETARIO", "BODEGUERO", "ROLE_BODEGUERO");
             List<String> destinatarios = miembroNegocioRepository.findCorreosByNegocioAndRoles(negocioId, rolesNotificacion);
+
+            System.out.println("🔍 Correos reales listos para recibir alerta: " + destinatarios);
+
+            if (destinatarios.isEmpty()) {
+                destinatarios = List.of("castroelkin2020@gmail.com");
+                System.out.println("⚠️ No se encontraron propietarios, enviando a correo de soporte: " + destinatarios);
+            }
 
             emailService.enviarAlertaStockMinimo(
                     destinatarios,
