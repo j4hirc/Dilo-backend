@@ -25,6 +25,16 @@ public class CategoriaController {
         return ResponseEntity.ok(categoriaService.obtenerPorNegocio(negocioId));
     }
 
+    @GetMapping("/search")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
+    public ResponseEntity<List<CategoriaResponseDTO>> buscarCategorias(
+            @PathVariable Long negocioId,
+            @RequestParam("term") String term) {
+
+        List<CategoriaResponseDTO> response = categoriaService.buscarPorTermino(negocioId, term);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping
     @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'BODEGUERO')")
     public ResponseEntity<CategoriaResponseDTO> crearCategoria(

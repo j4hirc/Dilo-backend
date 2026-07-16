@@ -30,6 +30,19 @@ public class CategoriaServiceImpl implements CategoriaService {
     }
 
     @Override
+    public List<CategoriaResponseDTO> buscarPorTermino(Long negocioId, String term) {
+        List<Categoria> categorias = categoriaRepository.buscarPorTermino(negocioId, term);
+
+        if (categorias.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron categorías con el término: " + term);
+        }
+
+        return categorias.stream()
+                .map(categoriaMapper::toDto)
+                .toList();
+    }
+
+    @Override
     public CategoriaResponseDTO crearCategoria(Long negocioId, CategoriaRequestDTO requestDTO) {
         Negocio negocio = negocioRepository.findById(negocioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
