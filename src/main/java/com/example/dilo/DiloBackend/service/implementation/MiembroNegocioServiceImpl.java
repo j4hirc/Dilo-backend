@@ -85,6 +85,16 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
             miembro.setEstadoInvitacion("ACEPTADO");
             miembro.setEstadoLaboral("Activo");
             miembro.setFechaVinculacion(LocalDateTime.now());
+
+
+            Usuario usuario = miembro.getUsuario();
+            Role rol = miembro.getRol();
+
+            if (!usuario.getRoles().contains(rol)) {
+                usuario.getRoles().add(rol);
+                usuarioRepository.save(usuario);
+            }
+
         } else {
             miembro.setEstadoInvitacion("RECHAZADO");
         }
@@ -93,8 +103,10 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
         return miembroNegocioMapper.toDto(actualizado);
     }
 
+
+
     @Override
-    public void eliminarMiembro(Long negocioId, Long miembroId) {
+    public MiembroNegocioResponseDTO desactivarMiembro(Long negocioId, Long miembroId) {
         MiembroNegocio miembro = miembroNegocioRepository.findById(miembroId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro de miembro no encontrado"));
 
@@ -102,7 +114,11 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
             throw new RuntimeException("El miembro no pertenece al negocio especificado");
         }
 
-        miembroNegocioRepository.delete(miembro);
+        // En lugar de borrarlo, lo pasamos a Inactivo
+        miembro.setEstadoLaboral("Inactivo");
+
+        MiembroNegocio actualizado = miembroNegocioRepository.save(miembro);
+        return miembroNegocioMapper.toDto(actualizado);
     }
 
     @Override
@@ -121,6 +137,7 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
 
         Role rol = roleRepository.findById(requestDTO.getIdRol())
                 .orElseThrow(() -> new ResourceNotFoundException("El rol especificado no existe"));
+
 
         MiembroNegocio nuevoMiembro = new MiembroNegocio();
         nuevoMiembro.setUsuario(usuario);

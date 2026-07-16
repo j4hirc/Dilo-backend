@@ -22,16 +22,15 @@ public class MiembroNegocioController {
 
     private final MiembroNegocioService miembroNegocioService;
 
-    // Listar miembros: El dueño, los empleados activos y el super admin pueden ver el equipo
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
     public ResponseEntity<List<MiembroNegocioResponseDTO>> obtenerMiembros(@PathVariable Long negocioId) {
         List<MiembroNegocioResponseDTO> response = miembroNegocioService.obtenerMiembrosPorNegocio(negocioId);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/invitar")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO')")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO')")
     public ResponseEntity<MiembroNegocioResponseDTO> invitarMiembro(
             @PathVariable Long negocioId,
             @Valid @RequestBody MiembroNegocioRequestDTO requestDTO) {
@@ -51,26 +50,13 @@ public class MiembroNegocioController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/{miembroId}")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO')")
-    public ResponseEntity<Void> eliminarMiembro(
+    @PutMapping("/{miembroId}/desactivar")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO')")
+    public ResponseEntity<MiembroNegocioResponseDTO> desactivarMiembro(
             @PathVariable Long negocioId,
             @PathVariable Long miembroId) {
 
-        miembroNegocioService.eliminarMiembro(negocioId, miembroId);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/unirse")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<MiembroNegocioResponseDTO> unirseConCodigo(
-            @Valid @RequestBody UnirseNegocioRequestDTO requestDTO) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String emailUsuarioLogueado = authentication.getName();
-
-        MiembroNegocioResponseDTO response = miembroNegocioService.unirseConCodigo(requestDTO, emailUsuarioLogueado);
-
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        MiembroNegocioResponseDTO response = miembroNegocioService.desactivarMiembro(negocioId, miembroId);
+        return ResponseEntity.ok(response);
     }
 }

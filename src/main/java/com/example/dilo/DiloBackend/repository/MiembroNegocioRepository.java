@@ -22,6 +22,9 @@ public interface MiembroNegocioRepository extends JpaRepository<MiembroNegocio, 
     @EntityGraph(attributePaths = {"usuario", "rol", "negocio"})
     List<MiembroNegocio> findByUsuarioId(Long usuarioId);
 
+    @EntityGraph(attributePaths = {"usuario", "rol", "negocio"})
+    List<MiembroNegocio> findByUsuarioEmail(String email);
+
 
     @EntityGraph(attributePaths = {"usuario", "rol", "negocio"})
     List<MiembroNegocio> findByNegocioId(Long negocioId);

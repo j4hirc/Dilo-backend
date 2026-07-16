@@ -95,6 +95,11 @@ public class NegocioServiceImpl implements NegocioService {
         Role rolPropietario = roleRepository.findByNombre("PROPIETARIO")
                 .orElseThrow(() -> new ResourceNotFoundException("Error: El rol PROPIETARIO no está configurado en la BD"));
 
+        if (!usuario.getRoles().contains(rolPropietario)) {
+            usuario.getRoles().add(rolPropietario);
+            usuarioRepository.save(usuario);
+        }
+
         MiembroNegocio nuevoJefe = new MiembroNegocio();
         nuevoJefe.setUsuario(usuario);
         nuevoJefe.setNegocio(negocioGuardado);

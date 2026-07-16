@@ -1,8 +1,12 @@
 package com.example.dilo.DiloBackend.controller;
 
 import com.example.dilo.DiloBackend.dto.request.NegocioRequestDTO;
+import com.example.dilo.DiloBackend.dto.request.UnirseNegocioRequestDTO;
+import com.example.dilo.DiloBackend.dto.response.MiembroNegocioResponseDTO;
 import com.example.dilo.DiloBackend.dto.response.NegocioResponseDTO;
+import com.example.dilo.DiloBackend.service.MiembroNegocioService;
 import com.example.dilo.DiloBackend.service.NegocioService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,6 +25,7 @@ import java.util.List;
 public class NegocioController {
 
     private final NegocioService negocioService;
+    private final MiembroNegocioService miembroNegocioService;
 
     // Solo un administrador general debería poder listar TODOS los negocios de la base de datos
     @GetMapping
@@ -80,5 +85,19 @@ public class NegocioController {
     public ResponseEntity<Void> eliminarNegocio(@PathVariable Long id) {
         negocioService.deleteNegocio(id);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @PostMapping("/unirse")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MiembroNegocioResponseDTO> unirseConCodigo(
+            @Valid @RequestBody UnirseNegocioRequestDTO requestDTO) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String emailUsuarioLogueado = authentication.getName();
+
+        MiembroNegocioResponseDTO response = miembroNegocioService.unirseConCodigo(requestDTO, emailUsuarioLogueado);
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 }

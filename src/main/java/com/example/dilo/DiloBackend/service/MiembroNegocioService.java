@@ -13,7 +13,7 @@ public interface MiembroNegocioService {
 
     MiembroNegocioResponseDTO responderInvitacion(Long negocioId, Long miembroId, boolean aceptar);
 
-    void eliminarMiembro(Long negocioId, Long miembroId);
+    MiembroNegocioResponseDTO desactivarMiembro(Long negocioId, Long miembroId);
 
     MiembroNegocioResponseDTO unirseConCodigo(UnirseNegocioRequestDTO requestDTO, String emailUsuario);
 }
