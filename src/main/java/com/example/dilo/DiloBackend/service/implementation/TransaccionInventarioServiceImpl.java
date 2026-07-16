@@ -5,6 +5,7 @@ import com.example.dilo.DiloBackend.dto.response.TransaccionInventarioResponseDT
 import com.example.dilo.DiloBackend.exception.ResourceNotFoundException;
 import com.example.dilo.DiloBackend.model.*;
 import com.example.dilo.DiloBackend.repository.*;
+import com.example.dilo.DiloBackend.service.EmailService;
 import com.example.dilo.DiloBackend.service.TransaccionInventarioService;
 import com.example.dilo.DiloBackend.service.mapper.TransaccionInventarioMapper;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,8 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
     private final NegocioRepository negocioRepository;
     private final UsuarioRepository usuarioRepository;
     private final TransaccionInventarioMapper transaccionMapper;
+    private final EmailService emailService;
+    private final MiembroNegocioRepository miembroNegocioRepository;
 
     @Override
     public List<TransaccionInventarioResponseDTO> obtenerKardexGeneral(Long negocioId) {
@@ -40,7 +43,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
     }
 
     @Override
-    @Transactional // CRÍTICO: Si algo falla al sumar/restar, se deshace todo.
+    @Transactional
     public TransaccionInventarioResponseDTO registrarTransaccion(Long negocioId, String emailUsuario, TransaccionInventarioRequestDTO requestDTO) {
         Negocio negocio = negocioRepository.findById(negocioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
@@ -100,6 +103,9 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
 
         inventario.setCantidadActual(inventario.getCantidadActual() - dto.getCantidad());
         inventarioRepository.save(inventario);
+
+        // NUEVO: Verificar si al hacer el egreso el stock quedó en nivel crítico
+        verificarStockCritico(inventario, negocioId);
     }
 
     private void procesarTransferencia(TransaccionInventario transaccion, TransaccionInventarioRequestDTO dto, Long negocioId, Producto producto) {
@@ -124,6 +130,9 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         inventarioOrigen.setCantidadActual(inventarioOrigen.getCantidadActual() - dto.getCantidad());
         inventarioRepository.save(inventarioOrigen);
 
+        // NUEVO: Verificar si la bodega a la que le quitamos stock quedó en nivel crítico
+        verificarStockCritico(inventarioOrigen, negocioId);
+
         InventarioBodega inventarioDestino = obtenerOCrearInventario(producto, bodegaDestino, negocioId);
         inventarioDestino.setCantidadActual(inventarioDestino.getCantidadActual() + dto.getCantidad());
         inventarioRepository.save(inventarioDestino);
@@ -141,7 +150,6 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
                 .filter(i -> i.getProducto().getId().equals(producto.getId()))
                 .findFirst()
                 .orElseGet(() -> {
-                    // Si el producto entra a una bodega por primera vez, creamos el registro
                     InventarioBodega nuevoInventario = new InventarioBodega();
                     nuevoInventario.setProducto(producto);
                     nuevoInventario.setBodega(bodega);
@@ -150,5 +158,21 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
                     nuevoInventario.setStockMinimo(5); // Valor por defecto
                     return nuevoInventario;
                 });
+    }
+
+    private void verificarStockCritico(InventarioBodega inventario, Long negocioId) {
+        if (inventario.getCantidadActual() <= inventario.getStockMinimo()) {
+
+            List<String> rolesNotificacion = List.of("PROPIETARIO", "BODEGUERO");
+            List<String> destinatarios = miembroNegocioRepository.findCorreosByNegocioAndRoles(negocioId, rolesNotificacion);
+
+            emailService.enviarAlertaStockMinimo(
+                    destinatarios,
+                    inventario.getProducto().getNombre(),
+                    inventario.getBodega().getNombre(),
+                    inventario.getCantidadActual(),
+                    inventario.getStockMinimo()
+            );
+        }
     }
 }
