@@ -28,6 +28,9 @@ public class Producto {
     @Column(name = "imagen")
     private String imagen;
 
+    @Column(name = "marca")
+    private String marca;
+
     @Column(nullable = false)
     private String nombre;
 
