@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -13,6 +12,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "transacciones_inventario")
 public class TransaccionInventario {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -39,8 +39,17 @@ public class TransaccionInventario {
     @Column(nullable = false)
     private Integer cantidad;
 
-    @Column(name = "fecha_transaccion")
+    @Column(name = "fecha_transaccion", updatable = false)
     private LocalDateTime fechaTransaccion;
 
     private String motivo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "negocio_id", nullable = false)
+    private Negocio negocio;
+
+    @PrePersist
+    protected void onCreate() {
+        this.fechaTransaccion = LocalDateTime.now();
+    }
 }

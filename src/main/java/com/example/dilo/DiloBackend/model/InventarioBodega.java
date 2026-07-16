@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -12,6 +11,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "inventario_bodega")
 public class InventarioBodega {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,8 +27,8 @@ public class InventarioBodega {
     @Column(name = "cantidad_actual", nullable = false)
     private Integer cantidadActual;
 
-    @Column(nullable = false)
-    private Integer stock;
+    @Column(name = "stock_minimo", nullable = false)
+    private Integer stockMinimo;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "negocio_id", nullable = false)
