@@ -27,7 +27,6 @@ public class NegocioController {
     private final NegocioService negocioService;
     private final MiembroNegocioService miembroNegocioService;
 
-    // Solo un administrador general debería poder listar TODOS los negocios de la base de datos
     @GetMapping
     @PreAuthorize("hasAuthority('SUPER_ADMIN')")
     public ResponseEntity<List<NegocioResponseDTO>> getAllNegocios() {
@@ -35,7 +34,6 @@ public class NegocioController {
         return ResponseEntity.ok(response);
     }
 
-    // Cualquiera que sea parte del negocio (o un admin) debería poder ver sus detalles
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'EMPLEADO')")
     public ResponseEntity<NegocioResponseDTO> getNegocioById(@PathVariable Long id) {
@@ -43,7 +41,6 @@ public class NegocioController {
         return ResponseEntity.ok(response);
     }
 
-    // Búsqueda habilitada para los roles principales
     @GetMapping("/search")
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'EMPLEADO')")
     public ResponseEntity<List<NegocioResponseDTO>> searchNegocios(@RequestParam("term") String term) {
@@ -51,8 +48,6 @@ public class NegocioController {
         return ResponseEntity.ok(response);
     }
 
-    // Cualquier usuario autenticado puede crear un negocio (por eso no lleva @PreAuthorize restrictivo).
-    // Al crearlo, el servicio ya le asigna el rol 'PROPIETARIO' en la BD.
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<NegocioResponseDTO> crearNegocio(
             @RequestPart("datos") NegocioRequestDTO datosNegocio,
@@ -66,7 +61,6 @@ public class NegocioController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    // Solo el dueño del negocio o un admin pueden actualizar la información
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO')")
     public ResponseEntity<NegocioResponseDTO> actualizarNegocio(
@@ -79,7 +73,6 @@ public class NegocioController {
         return ResponseEntity.ok(response);
     }
 
-    // Solo el dueño del negocio o un admin pueden eliminarlo
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO')")
     public ResponseEntity<Void> eliminarNegocio(@PathVariable Long id) {

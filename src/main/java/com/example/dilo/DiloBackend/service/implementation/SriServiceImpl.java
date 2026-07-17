@@ -16,7 +16,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -28,11 +28,20 @@ public class SriServiceImpl implements SriService {
     private final FacturaRepository facturaRepository;
     private final DetalleFacturaRepository detalleFacturaRepository;
     private final EmailService emailService;
+    private final FirmaService firmaService;
+    private final SriSoapClient sriSoapClient;
+    private final FirmaEncryptionService firmaEncryptionService;
 
     @Async
+    @Transactional
     @Override
-    public void procesarFacturaElectronica(Factura factura) {
+    public void procesarFacturaElectronica(Long facturaId) {
+
+        Factura factura = null;
         try {
+            factura = facturaRepository.findById(facturaId)
+                    .orElseThrow(() -> new RuntimeException("Factura no encontrada para el SRI"));
+
             System.out.println("⏳ Iniciando proceso SRI para factura ID: " + factura.getId());
 
             String claveAcceso = generarClaveAcceso(factura);
@@ -42,18 +51,64 @@ public class SriServiceImpl implements SriService {
 
             List<DetalleFactura> detalles = detalleFacturaRepository.findByFacturaId(factura.getId());
 
-            String xmlFactura = generarXMLFactura(factura, detalles, claveAcceso);
-            byte[] xmlBytes = xmlFactura.getBytes(StandardCharsets.UTF_8);
+            String xmlSinFirma = generarXMLFactura(factura, detalles, claveAcceso);
+
+            String rutaP12 = factura.getNegocio().getRutaFirma();
+
+            String passwordEncriptada = factura.getNegocio().getPasswordFirma();
+            String passwordFirma = firmaEncryptionService.desencriptar(passwordEncriptada);
 
 
+            System.out.println("🔑 Clave desde la BD: " + passwordEncriptada);
+            System.out.println("🔓 Clave desencriptada: [" + passwordFirma + "]");
+
+            // Descargamos el archivo .p12 directamente desde la URL de Supabase
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            byte[] p12Data = restTemplate.getForObject(rutaP12, byte[].class);
+
+            if (p12Data == null || p12Data.length == 0) {
+                throw new RuntimeException("No se pudo descargar la firma desde Supabase o el archivo está vacío.");
+            }
+
+            // Firmamos usando la contraseña ya desencriptada
+            String xmlFirmado = firmaService.firmarXML(xmlSinFirma, p12Data, passwordFirma);
+            byte[] xmlBytes = xmlFirmado.getBytes(StandardCharsets.UTF_8);
+
+            // 3. ENVIAR AL SRI
+            System.out.println("📤 Enviando comprobante al SRI...");
+            boolean recibido = sriSoapClient.enviarRecepcion(xmlBytes);
+
+            if (!recibido) {
+                System.err.println("❌ SRI rechazó la factura en etapa de Recepción.");
+                factura.setEstadoSri("DEVUELTA");
+                facturaRepository.save(factura);
+                return; // Cortamos la ejecución aquí
+            }
+
+            try {
+                Thread.sleep(3500);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+
+
+            System.out.println("🔎 Consultando autorización...");
+            boolean autorizado = sriSoapClient.consultarAutorizacion(claveAcceso);
+
+            if (!autorizado) {
+                System.err.println("❌ SRI NO AUTORIZÓ la factura (Revisar datos o estructura).");
+                factura.setEstadoSri("NO_AUTORIZADO");
+                facturaRepository.save(factura);
+                return; // Cortamos la ejecución aquí
+            }
+
+            System.out.println("✅ FACTURA AUTORIZADA POR EL SRI!");
             factura.setEstadoSri("AUTORIZADO");
             facturaRepository.save(factura);
 
-            // 2. Compilar y Generar el PDF (RIDE)
             byte[] pdfBytes = generarPdfRide(factura, detalles);
 
-            // 3. Despachar el correo al cliente
-            if (pdfBytes.length > 0) {
+            if (pdfBytes != null && pdfBytes.length > 0) {
                 emailService.enviarFacturaSri(
                         factura.getCliente().getEmail(),
                         factura.getCliente().getPrimerNombre(),
@@ -61,24 +116,28 @@ public class SriServiceImpl implements SriService {
                         pdfBytes,
                         xmlBytes
                 );
-            } else {
-                System.err.println("⚠️ El PDF se generó vacío, revisa la plantilla Jasper.");
             }
 
-            System.out.println("✅ Flujo documental completado exitosamente.");
+            System.out.println("✅ Flujo documental completado y correo enviado exitosamente.");
 
+        } catch (java.nio.file.NoSuchFileException e) {
+            System.err.println("❌ Error: No se encontró el archivo de la firma en la ruta: " + e.getFile());
+            if (factura != null) {
+                factura.setEstadoSri("ERROR_FIRMA");
+                facturaRepository.save(factura);
+            }
         } catch (Exception e) {
             System.err.println("❌ Error procesando factura en el SRI: " + e.getMessage());
-            factura.setEstadoSri("ERROR_SRI");
-            facturaRepository.save(factura);
+            if (factura != null) {
+                factura.setEstadoSri("ERROR_SRI");
+                facturaRepository.save(factura);
+            }
         }
     }
-
 
     private byte[] generarPdfRide(Factura factura, List<DetalleFactura> detalles) {
         try {
             JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(detalles);
-
 
             Map<String, Object> parametros = new HashMap<>();
             InputStream logoStream = getClass().getResourceAsStream("/reportes/logo_dilo.png");
@@ -149,7 +208,6 @@ public class SriServiceImpl implements SriService {
         return digito;
     }
 
-
     private String generarXMLFactura(Factura factura, List<DetalleFactura> detalles, String claveAcceso) {
         StringBuilder xml = new StringBuilder();
         Negocio negocio = factura.getNegocio();
@@ -207,7 +265,6 @@ public class SriServiceImpl implements SriService {
         xml.append("      </pago>\n");
         xml.append("    </pagos>\n");
         xml.append("  </infoFactura>\n");
-
 
         xml.append("  <detalles>\n");
         for (DetalleFactura df : detalles) {

@@ -8,6 +8,7 @@ import com.example.dilo.DiloBackend.exception.ResourceNotFoundException;
 import com.example.dilo.DiloBackend.model.*;
 import com.example.dilo.DiloBackend.repository.*;
 import com.example.dilo.DiloBackend.service.FacturaService;
+import com.example.dilo.DiloBackend.service.SriService;
 import com.example.dilo.DiloBackend.service.TransaccionInventarioService;
 import com.example.dilo.DiloBackend.service.mapper.FacturaMapper;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +37,7 @@ public class FacturaServiceImpl implements FacturaService {
     private final InventarioBodegaRepository inventarioRepository;
     private final TransaccionInventarioService transaccionService;
     private final FacturaMapper facturaMapper;
-
+    private final SriService sriService;
     private final ParametroGlobalRepository parametroGlobalRepository;
 
     @Override
@@ -135,6 +138,13 @@ public class FacturaServiceImpl implements FacturaService {
 
             transaccionService.registrarTransaccion(negocioId, emailUsuario, egresoVenta);
         }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sriService.procesarFacturaElectronica(facturaGuardada.getId());
+            }
+        });
 
         return facturaMapper.toDto(facturaGuardada, detallesParaGuardar);
     }

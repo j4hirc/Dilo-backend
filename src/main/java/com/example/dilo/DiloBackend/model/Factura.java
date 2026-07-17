@@ -19,7 +19,6 @@ public class Factura {
     private Long id;
 
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
