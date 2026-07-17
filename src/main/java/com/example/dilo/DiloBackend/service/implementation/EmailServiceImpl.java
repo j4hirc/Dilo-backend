@@ -50,19 +50,46 @@ public class EmailServiceImpl implements EmailService {
 
     @Async
     @Override
-    public void enviarFacturaSri(String emailCliente, String nombreCliente, String numeroFactura) {
+    public void enviarFacturaSri(String emailCliente, String nombreCliente, String numeroFactura, byte[] pdfRide, byte[] xmlComprobante) {
         String subject = "Su Factura Electrónica #" + numeroFactura;
 
         String htmlContent = String.format(
                 "<h3>Estimado/a %s,</h3>" +
-                        "<p>Adjunto a este correo encontrará los detalles de su factura electrónica <b>#%s</b>.</p>" +
+                        "<p>Adjunto a este correo encontrará los detalles de su factura electrónica <b>#%s</b> en formato PDF y XML.</p>" +
                         "<hr>" +
                         "<p><i>Le recordamos que puede verificar la validez de este comprobante directamente en el portal oficial del Servicio de Rentas Internas (SRI).</i></p>" +
                         "<p>Gracias por su preferencia.</p>",
                 nombreCliente, numeroFactura
         );
 
-        enviarPeticionSmtp(List.of(emailCliente), subject, htmlContent);
+        enviarPeticionSmtpConAdjuntos(emailCliente, subject, htmlContent, pdfRide, xmlComprobante, numeroFactura);
+    }
+
+    private void enviarPeticionSmtpConAdjuntos(String destinatario, String subject, String htmlContent, byte[] pdf, byte[] xml, String numFactura) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            // El 'true' es la clave aquí: indica que el correo es Multipart (lleva adjuntos)
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(senderEmail, senderName);
+            helper.setTo(destinatario);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+
+            // Adjuntar los archivos en la memoria
+            if (pdf != null && pdf.length > 0) {
+                helper.addAttachment("Factura_" + numFactura + ".pdf", new org.springframework.core.io.ByteArrayResource(pdf));
+            }
+            if (xml != null && xml.length > 0) {
+                helper.addAttachment("Factura_" + numFactura + ".xml", new org.springframework.core.io.ByteArrayResource(xml));
+            }
+
+            mailSender.send(message);
+            System.out.println("Correo con XML y PDF enviado exitosamente a: " + destinatario);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error enviando correo con adjuntos: " + e.getMessage());
+        }
     }
 
     private void enviarPeticionSmtp(List<String> destinatarios, String subject, String htmlContent) {

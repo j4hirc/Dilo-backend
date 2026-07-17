@@ -16,6 +16,9 @@ public class NegocioRequestDTO {
     @NotBlank(message = "El nombre comercial es obligatorio")
     private String nombreComercial;
 
+    @NotBlank(message = "La dirección de la matriz es obligatoria para el SRI")
+    private String direccion;
+
     @NotNull(message = "Debe especificar si está obligado a llevar contabilidad")
     private Boolean obligadoContabilidad;
 

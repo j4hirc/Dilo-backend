@@ -1,0 +1,134 @@
+<!-- Created with Jaspersoft Studio version 7.0.6.final using JasperReports Library version 7.0.6-5d2a603fdc6b3db8f842a83383e594f41891534d  -->
+<jasperReport name="factura" language="java" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="6bb42e4a-4cf8-44d0-8809-5690d93be7d7">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
+	<parameter name="LOGO_DILO" class="java.io.InputStream"/>
+	<parameter name="NUMERO_FACTURA" class="java.lang.String"/>
+	<parameter name="FECHA_EMISION" class="java.lang.String"/>
+	<parameter name="CLAVE_ACCESO" class="java.lang.String"/>
+	<parameter name="RAZON_SOCIAL" class="java.lang.String"/>
+	<parameter name="RUC" class="java.lang.String"/>
+	<parameter name="DIRECCION" class="java.lang.String"/>
+	<parameter name="CLIENTE_NOMBRE" class="java.lang.String"/>
+	<parameter name="CLIENTE_DNI" class="java.lang.String"/>
+	<parameter name="SUBTOTAL" class="java.math.BigDecimal"/>
+	<parameter name="IVA" class="java.math.BigDecimal"/>
+	<parameter name="TOTAL" class="java.math.BigDecimal"/>
+	<field name="cantidad" class="java.lang.Integer"/>
+	<field name="producto.nombre" class="java.lang.String"/>
+	<field name="precioUnitario" class="java.math.BigDecimal"/>
+	<field name="subtotalItem" class="java.math.BigDecimal"/>
+	<background splitType="Stretch"/>
+	<title height="140" splitType="Stretch">
+		<element kind="image" uuid="99887766-5544-3322-1100-ffeeddccbbaa" x="0" y="0" width="130" height="40">
+			<expression><![CDATA[$P{LOGO_DILO}]]></expression>
+		</element>
+		<element kind="rectangle" uuid="51bf0262-5a73-4263-b3bd-1da8f74fc397" x="280" y="0" width="275" height="130" backcolor="#F7F9FC" radius="5">
+			<pen lineWidth="0.5" lineColor="#B0B0B0"/>
+		</element>
+		<element kind="staticText" uuid="27492728-cac1-4b34-8131-29fda60e1031" x="290" y="10" width="100" height="20" fontSize="14.0" bold="true">
+			<text><![CDATA[FACTURA]]></text>
+		</element>
+		<element kind="textField" uuid="24af9d99-b6da-4087-a0b8-e7e0a060ff2b" x="390" y="10" width="155" height="20" forecolor="#D92525" fontSize="14.0" bold="true" hTextAlign="Right">
+			<expression><![CDATA["No. " + $P{NUMERO_FACTURA}]]></expression>
+		</element>
+		<element kind="staticText" uuid="da4d9095-cd06-4ebc-a1f9-0c696a11c5fc" x="290" y="40" width="100" height="15" bold="true">
+			<text><![CDATA[Fecha Emisión:]]></text>
+		</element>
+		<element kind="textField" uuid="3f8649ee-48c9-42ec-9669-5c07e52ab507" x="390" y="40" width="155" height="15" hTextAlign="Right">
+			<expression><![CDATA[$P{FECHA_EMISION}]]></expression>
+		</element>
+		<element kind="staticText" uuid="ebd8864d-caa2-44ab-809a-8e6aec7f19cd" x="290" y="60" width="100" height="15" bold="true">
+			<text><![CDATA[Clave de Acceso:]]></text>
+		</element>
+		<element kind="textField" uuid="b636e938-898a-458d-9a59-2b31f9453fea" x="290" y="80" width="255" height="40" fontSize="9.0" hTextAlign="Center">
+			<expression><![CDATA[$P{CLAVE_ACCESO}]]></expression>
+		</element>
+		<element kind="textField" uuid="72586b7a-1c12-4694-adbd-f33c2414d10e" x="0" y="45" width="270" height="25" fontSize="16.0" bold="true">
+			<expression><![CDATA[$P{RAZON_SOCIAL}]]></expression>
+		</element>
+		<element kind="textField" uuid="458af07a-a6ac-42d6-9607-41f0a0e9a7e4" x="0" y="70" width="270" height="20" fontSize="12.0">
+			<expression><![CDATA["RUC: " + $P{RUC}]]></expression>
+		</element>
+		<element kind="textField" uuid="ee83c399-a2ca-4a5d-9bad-833f72887413" x="0" y="90" width="270" height="40" textAdjust="StretchHeight">
+			<expression><![CDATA["Dirección Matriz: " + $P{DIRECCION}]]></expression>
+		</element>
+	</title>
+	<pageHeader height="60" splitType="Stretch">
+		<element kind="rectangle" uuid="6ce21fd2-8b23-4e02-a55b-f68a29ff66e0" x="0" y="5" width="555" height="45" radius="3">
+			<pen lineWidth="0.5" lineColor="#B0B0B0"/>
+		</element>
+		<element kind="staticText" uuid="18947107-16f5-4e98-93f6-abe7326b7283" x="10" y="15" width="100" height="20" bold="true">
+			<text><![CDATA[Razón Social:]]></text>
+		</element>
+		<element kind="textField" uuid="979dc020-32d5-4017-8b12-d42ced02c695" x="110" y="15" width="230" height="20">
+			<expression><![CDATA[$P{CLIENTE_NOMBRE}]]></expression>
+		</element>
+		<element kind="staticText" uuid="16fc1202-eb6d-4a4c-9772-078e385fa43a" x="350" y="15" width="60" height="20" bold="true">
+			<text><![CDATA[RUC/DNI:]]></text>
+		</element>
+		<element kind="textField" uuid="6e6f4a8c-cdc9-42ea-b7df-09abd70f7fda" x="410" y="15" width="135" height="20">
+			<expression><![CDATA[$P{CLIENTE_DNI}]]></expression>
+		</element>
+	</pageHeader>
+	<columnHeader height="25" splitType="Stretch">
+		<element kind="rectangle" uuid="7949f55d-8365-4f8a-821a-9b6127506dbf" x="0" y="0" width="555" height="25" backcolor="#2D3E50">
+			<pen lineWidth="0.0"/>
+		</element>
+		<element kind="staticText" uuid="45b2e640-9223-4017-b22f-08db3e274401" x="10" y="5" width="60" height="15" forecolor="#FFFFFF" bold="true">
+			<text><![CDATA[Cantidad]]></text>
+		</element>
+		<element kind="staticText" uuid="2a4e8078-1c2c-4581-92b7-eb9a6ed852f7" x="80" y="5" width="270" height="15" forecolor="#FFFFFF" bold="true">
+			<text><![CDATA[Descripción del Producto]]></text>
+		</element>
+		<element kind="staticText" uuid="41ee7563-164e-4965-9f57-cc458ed86d21" x="360" y="5" width="90" height="15" forecolor="#FFFFFF" bold="true" hTextAlign="Right">
+			<text><![CDATA[Precio Unit.]]></text>
+		</element>
+		<element kind="staticText" uuid="cd006dce-d02f-41e9-9ab3-419e1a9cdcfe" x="460" y="5" width="85" height="15" forecolor="#FFFFFF" bold="true" hTextAlign="Right">
+			<text><![CDATA[Total]]></text>
+		</element>
+	</columnHeader>
+	<detail>
+		<band height="25" splitType="Stretch">
+			<element kind="line" uuid="0f1671c2-97b1-45e7-9629-fd0a47bf8ed1" x="0" y="24" width="555" height="1" forecolor="#E0E0E0"/>
+			<element kind="textField" uuid="bec1db94-095b-4791-9af9-4204a58d5a87" x="10" y="5" width="60" height="15">
+				<expression><![CDATA[$F{cantidad}]]></expression>
+			</element>
+			<element kind="textField" uuid="952157e7-5beb-4a17-8efc-faee860da122" x="80" y="5" width="270" height="15" textAdjust="StretchHeight">
+				<expression><![CDATA[$F{producto.nombre}]]></expression>
+			</element>
+			<element kind="textField" uuid="bfad81f5-f3b5-4be1-92fc-cc7e6746c2b3" x="360" y="5" width="90" height="15" pattern="#,##0.00" hTextAlign="Right">
+				<expression><![CDATA[$F{precioUnitario}]]></expression>
+			</element>
+			<element kind="textField" uuid="c76b3710-98ba-4834-bb08-9a3ca29cbc1b" x="460" y="5" width="85" height="15" pattern="#,##0.00" hTextAlign="Right">
+				<expression><![CDATA[$F{subtotalItem}]]></expression>
+			</element>
+		</band>
+	</detail>
+	<summary height="100" splitType="Stretch">
+		<element kind="rectangle" uuid="4c1589fd-dacb-47b8-bcc2-75a6971a90b8" x="350" y="10" width="205" height="80" radius="5">
+			<pen lineWidth="0.5" lineColor="#B0B0B0"/>
+		</element>
+		<element kind="staticText" uuid="b74a3ab6-eff2-4226-be3b-d476d31dd30e" x="360" y="20" width="90" height="15" bold="true">
+			<text><![CDATA[SUBTOTAL:]]></text>
+		</element>
+		<element kind="textField" uuid="6bb00118-9fee-4749-aad9-9ecba454b8ff" x="460" y="20" width="85" height="15" pattern="$ #,##0.00" hTextAlign="Right">
+			<expression><![CDATA[$P{SUBTOTAL}]]></expression>
+		</element>
+		<element kind="staticText" uuid="b465a175-ac48-4197-a756-60a8f32fb355" x="360" y="40" width="90" height="15" bold="true">
+			<text><![CDATA[IVA:]]></text>
+		</element>
+		<element kind="textField" uuid="56c00e1f-44ab-4d8c-adc3-69d1ee8898a1" x="460" y="40" width="85" height="15" pattern="$ #,##0.00" hTextAlign="Right">
+			<expression><![CDATA[$P{IVA}]]></expression>
+		</element>
+		<element kind="line" uuid="b6da50a3-5218-44bb-9a59-5c8379b758e6" x="360" y="60" width="185" height="1"/>
+		<element kind="staticText" uuid="eefa01eb-5f9d-44fd-9682-aba476df00de" x="360" y="65" width="90" height="20" fontSize="12.0" bold="true">
+			<text><![CDATA[TOTAL:]]></text>
+		</element>
+		<element kind="textField" uuid="03864f3d-7d3f-432f-a071-dc7aed08f4fd" x="450" y="65" width="95" height="20" fontSize="12.0" pattern="$ #,##0.00" bold="true" hTextAlign="Right">
+			<expression><![CDATA[$P{TOTAL}]]></expression>
+		</element>
+		<element kind="staticText" uuid="cc21f4b2-0355-475d-824f-df08ddccb6dc" x="0" y="70" width="300" height="20" forecolor="#808080" fontSize="9.0" italic="true" hTextAlign="Left">
+			<text><![CDATA[Documento generado por Dilo - Facturación Inteligente]]></text>
+		</element>
+	</summary>
+</jasperReport>

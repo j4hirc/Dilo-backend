@@ -14,6 +14,9 @@ public class NegocioMapper {
         entity.setRuc(negocio.getRuc());
         entity.setNombreComercial(negocio.getNombreComercial());
         entity.setRazonSocial(negocio.getRazonSocial());
+
+        entity.setDireccion(negocio.getDireccion());
+
         entity.setObligadoContabilidad(negocio.getObligadoContabilidad());
         return entity;
     }
@@ -24,6 +27,10 @@ public class NegocioMapper {
         negocioResponseDTO.setRuc(entity.getRuc());
         negocioResponseDTO.setNombreComercial(entity.getNombreComercial());
         negocioResponseDTO.setRazonSocial(entity.getRazonSocial());
+
+        // Mapeamos la dirección al responder
+        negocioResponseDTO.setDireccion(entity.getDireccion());
+
         negocioResponseDTO.setPasswordFirma(entity.getPasswordFirma());
         negocioResponseDTO.setObligadoContabilidad(entity.getObligadoContabilidad());
         negocioResponseDTO.setCodigoInvitacion(entity.getCodigoInvitacion());

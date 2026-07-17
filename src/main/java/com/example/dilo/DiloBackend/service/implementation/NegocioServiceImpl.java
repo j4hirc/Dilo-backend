@@ -31,7 +31,6 @@ public class NegocioServiceImpl implements NegocioService {
     private final SupabaseStorageService storageService;
     private final NegocioMapper negocioMapper;
 
-
     @Override
     public List<NegocioResponseDTO> getAll() {
         List<Negocio> negocios = negocioRepository.findAll();
@@ -111,7 +110,6 @@ public class NegocioServiceImpl implements NegocioService {
         return negocioMapper.toDto(negocioGuardado);
     }
 
-
     @Override
     public NegocioResponseDTO updateNegocio(Long id, NegocioRequestDTO requestDTO, MultipartFile firma, MultipartFile imagen) {
         Negocio negocioExistente = negocioRepository.findById(id)
@@ -120,6 +118,10 @@ public class NegocioServiceImpl implements NegocioService {
         negocioExistente.setRuc(requestDTO.getRuc());
         negocioExistente.setRazonSocial(requestDTO.getRazonSocial());
         negocioExistente.setNombreComercial(requestDTO.getNombreComercial());
+
+        // --- AQUÍ ACTUALIZAMOS LA DIRECCIÓN ---
+        negocioExistente.setDireccion(requestDTO.getDireccion());
+
         negocioExistente.setObligadoContabilidad(requestDTO.getObligadoContabilidad());
 
         try {
@@ -152,7 +154,7 @@ public class NegocioServiceImpl implements NegocioService {
     @Override
     public void deleteNegocio(Long id) {
         Negocio negocio = negocioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(   "Negocio no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado con ID: " + id));
 
         negocioRepository.delete(negocio);
     }

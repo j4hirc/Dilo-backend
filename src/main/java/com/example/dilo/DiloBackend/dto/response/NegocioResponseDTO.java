@@ -15,6 +15,9 @@ public class NegocioResponseDTO {
 
     private String nombreComercial;
 
+
+    private String direccion;
+
     private Boolean obligadoContabilidad;
 
     private String rutaFirma;
