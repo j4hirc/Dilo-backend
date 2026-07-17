@@ -19,9 +19,17 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     boolean existsByDniAndNegocioId(String dni, Long negocioId);
 
     @Query("SELECT c FROM Cliente c WHERE c.negocio.id = :negocioId AND " +
-            "(LOWER(c.dni) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
-            "LOWER(c.primerNombre) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
-            "LOWER(c.apellidoPaterno) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+            "(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(CONCAT(c.primerNombre, ' ', c.apellidoPaterno)), 'á', 'a'), 'é', 'e'), 'í', 'i'), 'ó', 'o'), 'ú', 'u'), 'ñ', 'n') LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+            "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(CONCAT(c.apellidoPaterno, ' ', c.primerNombre)), 'á', 'a'), 'é', 'e'), 'í', 'i'), 'ó', 'o'), 'ú', 'u'), 'ñ', 'n') LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+            "LOWER(c.dni) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
             "LOWER(c.email) LIKE LOWER(CONCAT('%', :term, '%')))")
     List<Cliente> buscarPorTermino(@Param("negocioId") Long negocioId, @Param("term") String term);
+
+    // Búsqueda ultra robusta por voz (PLN) - Anti Tildes y combinando nombres al revés
+    @Query("SELECT c FROM Cliente c WHERE c.negocio.id = :negocioId AND " +
+            "(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(CONCAT(c.primerNombre, ' ', c.apellidoPaterno)), 'á', 'a'), 'é', 'e'), 'í', 'i'), 'ó', 'o'), 'ú', 'u'), 'ñ', 'n') LIKE CONCAT('%', :termino, '%') OR " +
+            "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(CONCAT(c.apellidoPaterno, ' ', c.primerNombre)), 'á', 'a'), 'é', 'e'), 'í', 'i'), 'ó', 'o'), 'ú', 'u'), 'ñ', 'n') LIKE CONCAT('%', :termino, '%') OR " +
+            "c.dni LIKE CONCAT('%', :termino, '%'))")
+    List<Cliente> buscarPorVoz(@Param("negocioId") Long negocioId, @Param("termino") String termino);
+
 }

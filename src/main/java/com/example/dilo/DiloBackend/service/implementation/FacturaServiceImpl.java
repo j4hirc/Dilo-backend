@@ -71,7 +71,7 @@ public class FacturaServiceImpl implements FacturaService {
             InventarioBodega inventario = inventarioRepository.findByBodegaIdAndNegocioId(dto.getBodegaId(), negocioId).stream()
                     .filter(i -> i.getProducto().getId().equals(producto.getId()))
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("El producto no existe en la bodega seleccionada."));
+                    .orElseThrow(() -> new RuntimeException("El producto '" + producto.getNombre() + "' no está registrado en la bodega seleccionada."));
 
             if (inventario.getCantidadActual() < dto.getCantidad()) {
                 throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() +

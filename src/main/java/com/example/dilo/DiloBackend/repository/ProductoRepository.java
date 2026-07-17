@@ -24,4 +24,9 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
             "LOWER(p.codigoPrincipal) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
             "LOWER(p.marca) LIKE LOWER(CONCAT('%', :term, '%')))")
     List<Producto> buscarPorTermino(@Param("negocioId") Long negocioId, @Param("term") String term);
+
+    @Query("SELECT p FROM Producto p WHERE p.negocio.id = :negocioId AND " +
+            "(LOWER(p.nombre) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
+            "p.codigoPrincipal LIKE CONCAT('%', :termino, '%'))")
+    List<Producto> buscarPorVoz(@Param("negocioId") Long negocioId, @Param("termino") String termino);
 }

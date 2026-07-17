@@ -2,7 +2,11 @@ package com.example.dilo.DiloBackend.controller;
 
 import com.example.dilo.DiloBackend.dto.request.ClienteRequestDTO;
 import com.example.dilo.DiloBackend.dto.response.ClienteResponseDTO;
+import com.example.dilo.DiloBackend.model.Cliente;
+import com.example.dilo.DiloBackend.repository.ClienteRepository;
 import com.example.dilo.DiloBackend.service.ClienteService;
+import com.example.dilo.DiloBackend.service.implementation.NlpService;
+import com.example.dilo.DiloBackend.service.mapper.ClienteMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +22,10 @@ import java.util.List;
 public class ClienteController {
 
     private final ClienteService clienteService;
+
+    private final NlpService nlpService;
+    private final ClienteRepository clienteRepository;
+    private final ClienteMapper     clienteMapper;
 
     @GetMapping
     @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'VENDEDOR')")
@@ -65,5 +73,24 @@ public class ClienteController {
             @PathVariable Long id) {
         clienteService.eliminarCliente(negocioId, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/buscar-voz")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'VENDEDOR')")
+    public ResponseEntity<List<ClienteResponseDTO>> buscarClientePorVoz(
+            @PathVariable Long negocioId,
+            @RequestParam("q") String textoDictado) {
+
+        String entidadLimpia = nlpService.limpiarComandoVoz(textoDictado);
+        System.out.println("🎙️ Voz original: " + textoDictado);
+        System.out.println("🤖 Entidad extraída por PLN: " + entidadLimpia);
+
+        List<Cliente> clientes = clienteRepository.buscarPorVoz(negocioId, entidadLimpia);
+
+        List<ClienteResponseDTO> response = clientes.stream()
+                .map(clienteMapper::toDto)
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 }
