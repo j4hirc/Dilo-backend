@@ -5,6 +5,7 @@ import com.example.dilo.DiloBackend.model.Factura;
 import com.example.dilo.DiloBackend.model.Negocio;
 import com.example.dilo.DiloBackend.repository.DetalleFacturaRepository;
 import com.example.dilo.DiloBackend.repository.FacturaRepository;
+import com.example.dilo.DiloBackend.service.CuentaPorCobrarService;
 import com.example.dilo.DiloBackend.service.EmailService;
 import com.example.dilo.DiloBackend.service.SriService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,9 @@ public class SriServiceImpl implements SriService {
     private final FirmaService firmaService;
     private final SriSoapClient sriSoapClient;
     private final FirmaEncryptionService firmaEncryptionService;
+
+    // 👇 1. INYECTAMOS EL SERVICIO DE CUENTAS POR COBRAR
+    private final CuentaPorCobrarService cuentaPorCobrarService;
 
     @Async
     @Transactional
@@ -105,6 +109,11 @@ public class SriServiceImpl implements SriService {
             System.out.println("✅ FACTURA AUTORIZADA POR EL SRI!");
             factura.setEstadoSri("AUTORIZADO");
             facturaRepository.save(factura);
+
+            // 👇 2. AQUÍ GENERAMOS LA DEUDA Y LAS CUOTAS MÁGICAMENTE
+            System.out.println("💳 Generando estado de cuenta y cuotas (3 plazos para prueba)...");
+            cuentaPorCobrarService.generarCuentaPorCobrar(factura, 3);
+            System.out.println("✅ Cuotas generadas con éxito en la base de datos.");
 
             byte[] pdfBytes = generarPdfRide(factura, detalles);
 

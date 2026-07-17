@@ -63,4 +63,9 @@ public class Factura {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "negocio_id", nullable = false)
     private Negocio negocio;
+
+
+    @Column(name = "numero_cuotas")
+    private Integer numeroCuotas = 0;
+
 }

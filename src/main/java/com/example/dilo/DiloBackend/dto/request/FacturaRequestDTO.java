@@ -19,4 +19,6 @@ public class FacturaRequestDTO {
     @NotEmpty(message = "La factura debe tener al menos un detalle")
     @Valid
     private List<DetalleFacturaRequestDTO> detalles;
+
+    private Integer numeroCuotas;
 }

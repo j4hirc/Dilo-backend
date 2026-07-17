@@ -123,6 +123,8 @@ public class FacturaServiceImpl implements FacturaService {
         factura.setFormaPago(request.getMetodoPago());
         factura.setEstadoSri("CREADA");
 
+        factura.setNumeroCuotas(request.getNumeroCuotas() != null ? request.getNumeroCuotas() : 0);
+
         Factura facturaGuardada = facturaRepository.save(factura);
 
         for (DetalleFactura detalle : detallesParaGuardar) {
