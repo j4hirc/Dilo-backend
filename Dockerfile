@@ -20,7 +20,7 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Copiamos el archivo JAR (el asterisco ayuda a que no importe el nombre de la versión)
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target/DiloBackend-0.0.1-SNAPSHOT.jar app.jar
 
 # Exponemos el puerto 8080
 EXPOSE 8080
