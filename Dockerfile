@@ -25,6 +25,5 @@ COPY --from=build /app/target/DiloBackend-0.0.1-SNAPSHOT.jar app.jar
 # Exponemos el puerto 8080
 EXPOSE 8080
 
-# ENTRYPOINT con banderas de memoria limitadas para los 512MB de Render
-# -Xmx400m limita la RAM al máximo (400mb) para evitar el error Out of Memory
-ENTRYPOINT ["java", "-Xmx400m", "-Xss512k", "-XX:+UseContainerSupport", "-jar", "app.jar"]
+# ENTRYPOINT ajustado OBLIGATORIAMENTE para los 512MB de Render y su puerto dinámico
+ENTRYPOINT ["java", "-Xmx256m", "-XX:MaxMetaspaceSize=128m", "-Xss512k", "-XX:+UseContainerSupport", "-Dserver.port=${PORT:8080}", "-jar", "app.jar"]
