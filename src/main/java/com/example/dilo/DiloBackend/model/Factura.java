@@ -52,7 +52,7 @@ public class Factura {
     @Column(name = "total_factura", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalFactura;
 
-    @Column(name = "forma_pago", nullable = false, length = 50)
+    @Column(name = "metodo_pago", nullable = false, length = 50)
     private String formaPago;
 
     @Column(name = "clave_acceso_sri", length = 49)
