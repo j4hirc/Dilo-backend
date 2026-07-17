@@ -22,8 +22,8 @@ WORKDIR /app
 # Copiamos el archivo JAR (el asterisco ayuda a que no importe el nombre de la versión)
 COPY --from=build /app/target/DiloBackend-0.0.1-SNAPSHOT.jar app.jar
 
-# Exponemos el puerto 8080
-EXPOSE 8080
+# Exponemos el puerto 8081
+EXPOSE 8081
 
 # ENTRYPOINT ajustado OBLIGATORIAMENTE para los 512MB de Render y su puerto dinámico
 ENTRYPOINT ["java", "-Xmx256m", "-XX:MaxMetaspaceSize=128m", "-Xss512k", "-XX:+UseContainerSupport", "-jar", "app.jar"]
