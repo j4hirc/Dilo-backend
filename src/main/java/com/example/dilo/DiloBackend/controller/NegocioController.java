@@ -51,13 +51,12 @@ public class NegocioController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<NegocioResponseDTO> crearNegocio(
             @RequestPart("datos") NegocioRequestDTO datosNegocio,
-            @RequestPart(value = "firma", required = false) MultipartFile firma,
             @RequestPart(value = "imagen", required = false) MultipartFile imagen) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String emailUsuarioLogueado = authentication.getName();
 
-        NegocioResponseDTO response = negocioService.createNegocio(datosNegocio, firma, imagen, emailUsuarioLogueado);
+        NegocioResponseDTO response = negocioService.createNegocio(datosNegocio, imagen, emailUsuarioLogueado);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -66,10 +65,9 @@ public class NegocioController {
     public ResponseEntity<NegocioResponseDTO> actualizarNegocio(
             @PathVariable Long id,
             @RequestPart("datos") NegocioRequestDTO datosNegocio,
-            @RequestPart(value = "firma", required = false) MultipartFile firma,
             @RequestPart(value = "imagen", required = false) MultipartFile imagen) {
 
-        NegocioResponseDTO response = negocioService.updateNegocio(id, datosNegocio, firma, imagen);
+        NegocioResponseDTO response = negocioService.updateNegocio(id, datosNegocio, imagen);
         return ResponseEntity.ok(response);
     }
 
@@ -79,7 +77,6 @@ public class NegocioController {
         negocioService.deleteNegocio(id);
         return ResponseEntity.noContent().build();
     }
-
 
     @PostMapping("/unirse")
     @PreAuthorize("isAuthenticated()")

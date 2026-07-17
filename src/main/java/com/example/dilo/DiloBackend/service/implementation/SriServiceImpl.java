@@ -29,12 +29,9 @@ public class SriServiceImpl implements SriService {
     private final FacturaRepository facturaRepository;
     private final DetalleFacturaRepository detalleFacturaRepository;
     private final EmailService emailService;
-    private final FirmaService firmaService;
     private final SriSoapClient sriSoapClient;
-    private final FirmaEncryptionService firmaEncryptionService;
-
-    // 👇 1. INYECTAMOS EL SERVICIO DE CUENTAS POR COBRAR
     private final CuentaPorCobrarService cuentaPorCobrarService;
+    // ❌ Eliminadas las inyecciones de FirmaService y FirmaEncryptionService
 
     @Async
     @Transactional
@@ -46,7 +43,7 @@ public class SriServiceImpl implements SriService {
             factura = facturaRepository.findById(facturaId)
                     .orElseThrow(() -> new RuntimeException("Factura no encontrada para el SRI"));
 
-            System.out.println("⏳ Iniciando proceso SRI para factura ID: " + factura.getId());
+            System.out.println("⏳ Iniciando simulación SRI para factura ID: " + factura.getId());
 
             String claveAcceso = generarClaveAcceso(factura);
             factura.setClaveAccesoSri(claveAcceso);
@@ -55,46 +52,26 @@ public class SriServiceImpl implements SriService {
 
             List<DetalleFactura> detalles = detalleFacturaRepository.findByFacturaId(factura.getId());
 
+            // Generamos el XML (Ya no lo firmamos, va directo)
             String xmlSinFirma = generarXMLFactura(factura, detalles, claveAcceso);
+            byte[] xmlBytes = xmlSinFirma.getBytes(StandardCharsets.UTF_8);
 
-            String rutaP12 = factura.getNegocio().getRutaFirma();
-
-            String passwordEncriptada = factura.getNegocio().getPasswordFirma();
-            String passwordFirma = firmaEncryptionService.desencriptar(passwordEncriptada);
-
-
-            System.out.println("🔑 Clave desde la BD: " + passwordEncriptada);
-            System.out.println("🔓 Clave desencriptada: [" + passwordFirma + "]");
-
-            // Descargamos el archivo .p12 directamente desde la URL de Supabase
-            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-            byte[] p12Data = restTemplate.getForObject(rutaP12, byte[].class);
-
-            if (p12Data == null || p12Data.length == 0) {
-                throw new RuntimeException("No se pudo descargar la firma desde Supabase o el archivo está vacío.");
-            }
-
-            // Firmamos usando la contraseña ya desencriptada
-            String xmlFirmado = firmaService.firmarXML(xmlSinFirma, p12Data, passwordFirma);
-            byte[] xmlBytes = xmlFirmado.getBytes(StandardCharsets.UTF_8);
-
-            // 3. ENVIAR AL SRI
-            System.out.println("📤 Enviando comprobante al SRI...");
+            // 3. ENVIAR AL SRI SIMULADO
+            System.out.println("📤 Enviando comprobante simulado al SRI...");
             boolean recibido = sriSoapClient.enviarRecepcion(xmlBytes);
 
             if (!recibido) {
                 System.err.println("❌ SRI rechazó la factura en etapa de Recepción.");
                 factura.setEstadoSri("DEVUELTA");
                 facturaRepository.save(factura);
-                return; // Cortamos la ejecución aquí
+                return;
             }
 
             try {
-                Thread.sleep(3500);
+                Thread.sleep(2000); // Reduje el tiempo a 2 seg para que sea más veloz
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
-
 
             System.out.println("🔎 Consultando autorización...");
             boolean autorizado = sriSoapClient.consultarAutorizacion(claveAcceso);
@@ -103,17 +80,18 @@ public class SriServiceImpl implements SriService {
                 System.err.println("❌ SRI NO AUTORIZÓ la factura (Revisar datos o estructura).");
                 factura.setEstadoSri("NO_AUTORIZADO");
                 facturaRepository.save(factura);
-                return; // Cortamos la ejecución aquí
+                return;
             }
 
-            System.out.println("✅ FACTURA AUTORIZADA POR EL SRI!");
+            System.out.println("✅ FACTURA AUTORIZADA POR EL SRI (SIMULADO)!");
             factura.setEstadoSri("AUTORIZADO");
             facturaRepository.save(factura);
 
-            // 👇 2. AQUÍ GENERAMOS LA DEUDA Y LAS CUOTAS MÁGICAMENTE
-            System.out.println("💳 Generando estado de cuenta y cuotas (3 plazos para prueba)...");
-            cuentaPorCobrarService.generarCuentaPorCobrar(factura, 3);
-            System.out.println("✅ Cuotas generadas con éxito en la base de datos.");
+            if (factura.getNumeroCuotas() > 0) {
+                System.out.println("💳 Generando estado de cuenta y cuotas...");
+                cuentaPorCobrarService.generarCuentaPorCobrar(factura, factura.getNumeroCuotas());
+                System.out.println("✅ Cuotas generadas con éxito en la base de datos.");
+            }
 
             byte[] pdfBytes = generarPdfRide(factura, detalles);
 
@@ -129,12 +107,6 @@ public class SriServiceImpl implements SriService {
 
             System.out.println("✅ Flujo documental completado y correo enviado exitosamente.");
 
-        } catch (java.nio.file.NoSuchFileException e) {
-            System.err.println("❌ Error: No se encontró el archivo de la firma en la ruta: " + e.getFile());
-            if (factura != null) {
-                factura.setEstadoSri("ERROR_FIRMA");
-                facturaRepository.save(factura);
-            }
         } catch (Exception e) {
             System.err.println("❌ Error procesando factura en el SRI: " + e.getMessage());
             if (factura != null) {
@@ -163,7 +135,6 @@ public class SriServiceImpl implements SriService {
             parametros.put("IVA", factura.getTotalIva());
             parametros.put("TOTAL", factura.getTotalFactura());
 
-            // Ubicación de la plantilla base en tu proyecto
             InputStream reportStream = getClass().getResourceAsStream("/reportes/factura.jrxml");
 
             if (reportStream == null) {

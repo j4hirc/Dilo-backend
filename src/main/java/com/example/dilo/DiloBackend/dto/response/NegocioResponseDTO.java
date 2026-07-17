@@ -1,7 +1,6 @@
 package com.example.dilo.DiloBackend.dto.response;
 
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Data
@@ -15,16 +14,11 @@ public class NegocioResponseDTO {
 
     private String nombreComercial;
 
-
     private String direccion;
 
     private Boolean obligadoContabilidad;
 
-    private String rutaFirma;
-
     private String codigoInvitacion;
-
-    private String passwordFirma;
 
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 

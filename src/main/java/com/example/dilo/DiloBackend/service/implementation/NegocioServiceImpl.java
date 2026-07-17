@@ -24,7 +24,6 @@ import java.util.List;
 public class NegocioServiceImpl implements NegocioService {
 
     private final NegocioRepository negocioRepository;
-    private final FirmaEncryptionService firmaEncryptionService;
     private final UsuarioRepository usuarioRepository;
     private final MiembroNegocioRepository miembroNegocioRepository;
     private final RoleRepository roleRepository;
@@ -60,20 +59,11 @@ public class NegocioServiceImpl implements NegocioService {
     }
 
     @Override
-    public NegocioResponseDTO createNegocio(NegocioRequestDTO negocioRequestDTO, MultipartFile firma, MultipartFile imagen, String email) {
+    public NegocioResponseDTO createNegocio(NegocioRequestDTO negocioRequestDTO, MultipartFile imagen, String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado en el sistema"));
 
         Negocio negocio = negocioMapper.toEntity(negocioRequestDTO);
-
-        try {
-            if (firma != null && !firma.isEmpty()) {
-                String urlFirma = storageService.uploadFile(firma, "firmas");
-                negocio.setRutaFirma(urlFirma);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Error crítico al subir la firma electrónica: " + e.getMessage());
-        }
 
         try {
             if (imagen != null && !imagen.isEmpty()) {
@@ -82,11 +72,6 @@ public class NegocioServiceImpl implements NegocioService {
             }
         } catch (Exception e) {
             throw new RuntimeException("Error crítico al subir la imagen del negocio: " + e.getMessage());
-        }
-
-        if (negocioRequestDTO.getPasswordFirma() != null && !negocioRequestDTO.getPasswordFirma().isBlank()) {
-            String passwordEncriptada = firmaEncryptionService.encriptar(negocioRequestDTO.getPasswordFirma());
-            negocio.setPasswordFirma(passwordEncriptada);
         }
 
         Negocio negocioGuardado = negocioRepository.save(negocio);
@@ -111,27 +96,15 @@ public class NegocioServiceImpl implements NegocioService {
     }
 
     @Override
-    public NegocioResponseDTO updateNegocio(Long id, NegocioRequestDTO requestDTO, MultipartFile firma, MultipartFile imagen) {
+    public NegocioResponseDTO updateNegocio(Long id, NegocioRequestDTO requestDTO, MultipartFile imagen) {
         Negocio negocioExistente = negocioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado con ID: " + id));
 
         negocioExistente.setRuc(requestDTO.getRuc());
         negocioExistente.setRazonSocial(requestDTO.getRazonSocial());
         negocioExistente.setNombreComercial(requestDTO.getNombreComercial());
-
-        // --- AQUÍ ACTUALIZAMOS LA DIRECCIÓN ---
         negocioExistente.setDireccion(requestDTO.getDireccion());
-
         negocioExistente.setObligadoContabilidad(requestDTO.getObligadoContabilidad());
-
-        try {
-            if (firma != null && !firma.isEmpty()) {
-                String urlFirma = storageService.uploadFile(firma, "firmas");
-                negocioExistente.setRutaFirma(urlFirma);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Error al subir la nueva firma electrónica: " + e.getMessage());
-        }
 
         try {
             if (imagen != null && !imagen.isEmpty()) {
@@ -140,11 +113,6 @@ public class NegocioServiceImpl implements NegocioService {
             }
         } catch (Exception e) {
             throw new RuntimeException("Error al subir la nueva imagen: " + e.getMessage());
-        }
-
-        if (requestDTO.getPasswordFirma() != null && !requestDTO.getPasswordFirma().isBlank()) {
-            String passwordEncriptada = firmaEncryptionService.encriptar(requestDTO.getPasswordFirma());
-            negocioExistente.setPasswordFirma(passwordEncriptada);
         }
 
         Negocio negocioActualizado = negocioRepository.save(negocioExistente);

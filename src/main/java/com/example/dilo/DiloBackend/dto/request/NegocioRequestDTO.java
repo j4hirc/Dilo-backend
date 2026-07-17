@@ -22,9 +22,4 @@ public class NegocioRequestDTO {
     @NotNull(message = "Debe especificar si está obligado a llevar contabilidad")
     private Boolean obligadoContabilidad;
 
-    private String rutaFirma;
-
-    @NotBlank(message = "La contraseña de la firma es obligatorio")
-    private String passwordFirma;
-
 }
