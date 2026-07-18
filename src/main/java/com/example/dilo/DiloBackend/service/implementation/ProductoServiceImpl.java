@@ -13,6 +13,7 @@ import com.example.dilo.DiloBackend.service.ProductoService;
 import com.example.dilo.DiloBackend.service.mapper.ProductoMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -84,6 +85,7 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
+    @Transactional
     public ProductoResponseDTO actualizarProducto(Long negocioId, Long id, ProductoRequestDTO requestDTO, MultipartFile imagen) {
         Producto producto = productoRepository.findByIdAndNegocioId(id, negocioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado en este negocio"));
