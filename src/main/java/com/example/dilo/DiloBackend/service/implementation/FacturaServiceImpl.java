@@ -68,9 +68,12 @@ public class FacturaServiceImpl implements FacturaService {
             Producto producto = productoRepository.findById(dto.getProductoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + dto.getProductoId()));
 
-            InventarioBodega inventario = inventarioRepository.findByBodegaIdAndNegocioId(dto.getBodegaId(), negocioId).stream()
-                    .filter(i -> i.getProducto().getId().equals(producto.getId()))
-                    .findFirst()
+            // Antes: se traia TODO el inventario de la bodega (findByBodegaIdAndNegocioId)
+            // y se filtraba en memoria por producto, repitiendo esa consulta completa
+            // por cada linea de la factura (N+1). Ahora se pide directamente la fila que
+            // corresponde al producto.
+            InventarioBodega inventario = inventarioRepository
+                    .findByBodegaIdAndNegocioIdAndProductoId(dto.getBodegaId(), negocioId, producto.getId())
                     .orElseThrow(() -> new RuntimeException("El producto '" + producto.getNombre() + "' no está registrado en la bodega seleccionada."));
 
             if (inventario.getCantidadActual() < dto.getCantidad()) {
