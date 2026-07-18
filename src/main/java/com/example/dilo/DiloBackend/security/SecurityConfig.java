@@ -46,6 +46,7 @@ public class SecurityConfig {
                         auth
                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                 .requestMatchers("/api/v1/auth/**").permitAll()
+                                .requestMatchers("/api/v1/parroquias/**").permitAll() // <-- AGREGA ESTA LÍNEA
                                 .requestMatchers("/error").permitAll()
                                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                                 .anyRequest().authenticated()
