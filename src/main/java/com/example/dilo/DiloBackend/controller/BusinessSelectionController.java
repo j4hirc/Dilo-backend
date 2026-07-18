@@ -30,12 +30,10 @@ public class BusinessSelectionController {
         String email = authentication.getName();
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        // Verify the user belongs to the business
         boolean belongs = miembroNegocioRepository.existsByUsuarioIdAndNegocioId(usuario.getId(), request.getBusinessId());
         if (!belongs) {
             return ResponseEntity.status(403).build();
         }
-        // Generate new token with businessId claim
         String newToken = jwtGenerator.generateToken(authentication, request.getBusinessId());
         AuthResponseDTO response = new AuthResponseDTO();
         response.setToken(newToken);

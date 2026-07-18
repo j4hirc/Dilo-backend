@@ -44,6 +44,12 @@ public class LoginServiceImpl implements LoginService {
         List<MiembroNegocio> miembros = miembroNegocioRepository.findByUsuarioId(usuario.getId());
         List<NegocioResponseDTO> negocios = miembros.stream()
                 .map(m -> negocioMapper.toDto(m.getNegocio()))
+                .distinct() // En caso de que tenga multiples roles en el mismo negocio, evitamos duplicar el negocio
+                .collect(Collectors.toList());
+                
+        List<String> roles = miembros.stream()
+                .map(m -> m.getRol().getNombre())
+                .distinct()
                 .collect(Collectors.toList());
 
         boolean esSuperAdmin = usuario.getRoles().stream()
@@ -57,9 +63,21 @@ public class LoginServiceImpl implements LoginService {
         response.setNombreCompleto(usuario.getPrimerNombre() + " " + usuario.getApellidoPaterno());
         response.setFotoPerfil(usuario.getFotoPerfil());
         response.setSuperAdmin(esSuperAdmin);
+        
         response.setBusinesses(negocios);
-        response.setNeedsBusinessSelection(negocios.size() != 1);
         response.setSelectedBusinessId(negocios.size() == 1 ? negocios.get(0).getIdNegocio() : null);
+        response.setNeedsBusinessSelection(negocios.size() != 1);
+        
+        response.setRoles(roles);
+        if (roles.size() == 1) {
+            response.setRol(roles.get(0));
+            response.setNeedsRoleSelection(false);
+        } else if (roles.size() > 1) {
+            response.setRol(null);
+            response.setNeedsRoleSelection(true);
+        } else {
+            response.setNeedsRoleSelection(false);
+        }
 
         return response;
     }
