@@ -153,4 +153,25 @@ public class FacturaServiceImpl implements FacturaService {
 
         return facturaMapper.toDto(facturaGuardada, detallesParaGuardar);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FacturaResponseDTO> obtenerFacturasPorNegocio(Long negocioId) {
+
+        // 1. Validamos que el negocio exista
+        negocioRepository.findById(negocioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
+
+        // 2. Buscamos todas las facturas de este negocio (Asegúrate de tener este método en tu FacturaRepository)
+        List<Factura> facturas = facturaRepository.findByNegocioIdOrderByFechaEmisionDesc(negocioId);
+
+        // 3. Mapeamos la lista de Entidades a DTOs
+        return facturas.stream()
+                .map(factura -> {
+                    // Como tu mapper requiere los detalles, los buscamos por cada factura
+                    List<DetalleFactura> detalles = detalleFacturaRepository.findByFacturaId(factura.getId());
+                    return facturaMapper.toDto(factura, detalles);
+                })
+                .toList();
+    }
 }

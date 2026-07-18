@@ -10,4 +10,6 @@ public interface DetalleFacturaRepository extends JpaRepository<DetalleFactura, 
 
     @EntityGraph(attributePaths = {"producto", "bodega", "factura"})
     List<DetalleFactura> findByFacturaId(Long facturaId);
+
+
 }
