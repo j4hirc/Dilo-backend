@@ -88,7 +88,8 @@ public class ProductoServiceImpl implements ProductoService {
         Producto producto = productoRepository.findByIdAndNegocioId(id, negocioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado en este negocio"));
 
-        if (!producto.getCodigoPrincipal().equals(requestDTO.getCodigoPrincipal()) &&
+        if (requestDTO.getCodigoPrincipal() != null &&
+                !requestDTO.getCodigoPrincipal().equals(producto.getCodigoPrincipal()) &&
                 productoRepository.existsByCodigoPrincipalAndNegocioId(requestDTO.getCodigoPrincipal(), negocioId)) {
             throw new RuntimeException("Ya existe otro producto con el código " + requestDTO.getCodigoPrincipal());
         }
@@ -115,6 +116,7 @@ public class ProductoServiceImpl implements ProductoService {
         Producto actualizado = productoRepository.save(producto);
         return productoMapper.toDto(actualizado);
     }
+
 
     @Override
     public void eliminarProducto(Long negocioId, Long id) {
