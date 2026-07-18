@@ -20,7 +20,6 @@ public class ParroquiaController {
     private final ParroquiaService parroquiaService;
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ParroquiaResponseDTO>> obtenerParroquias() {
         return ResponseEntity.ok(parroquiaService.obtenerTodas());
     }
