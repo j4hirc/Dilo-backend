@@ -11,8 +11,6 @@ import com.example.dilo.DiloBackend.service.SriService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import net.sf.jasperreports.engine.*;
-import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -31,7 +29,7 @@ public class SriServiceImpl implements SriService {
     private final EmailService emailService;
     private final SriSoapClient sriSoapClient;
     private final CuentaPorCobrarService cuentaPorCobrarService;
-    // ❌ Eliminadas las inyecciones de FirmaService y FirmaEncryptionService
+    private final FacturaPdfService facturaPdfService;
 
     @Async
     @Transactional
@@ -93,7 +91,7 @@ public class SriServiceImpl implements SriService {
                 System.out.println("✅ Cuotas generadas con éxito en la base de datos.");
             }
 
-            byte[] pdfBytes = generarPdfRide(factura, detalles);
+            byte[] pdfBytes = facturaPdfService.generarPdfFactura(factura, detalles);
 
             if (pdfBytes != null && pdfBytes.length > 0) {
                 emailService.enviarFacturaSri(
@@ -116,41 +114,6 @@ public class SriServiceImpl implements SriService {
         }
     }
 
-    private byte[] generarPdfRide(Factura factura, List<DetalleFactura> detalles) {
-        try {
-            JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(detalles);
-
-            Map<String, Object> parametros = new HashMap<>();
-            InputStream logoStream = getClass().getResourceAsStream("/reportes/logo_dilo.png");
-            parametros.put("LOGO_DILO", logoStream);
-            parametros.put("NUMERO_FACTURA", factura.getNumeroFactura());
-            parametros.put("FECHA_EMISION", factura.getFechaEmision().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-            parametros.put("CLAVE_ACCESO", factura.getClaveAccesoSri());
-            parametros.put("RAZON_SOCIAL", factura.getNegocio().getRazonSocial());
-            parametros.put("RUC", factura.getNegocio().getRuc());
-            parametros.put("DIRECCION", factura.getNegocio().getDireccion());
-            parametros.put("CLIENTE_NOMBRE", factura.getCliente().getPrimerNombre() + " " + factura.getCliente().getApellidoPaterno());
-            parametros.put("CLIENTE_DNI", factura.getCliente().getDni());
-            parametros.put("SUBTOTAL", factura.getSubtotalIva0().add(factura.getSubtotalIvaAplicado()));
-            parametros.put("IVA", factura.getTotalIva());
-            parametros.put("TOTAL", factura.getTotalFactura());
-
-            InputStream reportStream = getClass().getResourceAsStream("/reportes/factura.jrxml");
-
-            if (reportStream == null) {
-                throw new RuntimeException("No se encontró el archivo factura.jrxml en src/main/resources/reportes/");
-            }
-
-            JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
-            JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parametros, dataSource);
-
-            return JasperExportManager.exportReportToPdf(jasperPrint);
-
-        } catch (Exception e) {
-            System.err.println("❌ Fallo en la generación del PDF de JasperReports: " + e.getMessage());
-            return new byte[0];
-        }
-    }
 
     private String generarClaveAcceso(Factura factura) {
         Negocio negocio = factura.getNegocio();
