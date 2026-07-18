@@ -26,4 +26,4 @@ COPY --from=build /app/target/DiloBackend-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8081
 
 # ENTRYPOINT ajustado OBLIGATORIAMENTE para los 512MB de Render y su puerto dinámico
-ENTRYPOINT java -Xmx256m -XX:MaxMetaspaceSize=128m -Xss512k -XX:+UseContainerSupport -Dserver.port=$PORT -jar app.jar
+ENTRYPOINT java -Xmx320m -XX:MaxMetaspaceSize=128m -Xss512k -XX:+UseContainerSupport -Dserver.port=$PORT -jar app.jar
