@@ -1,5 +1,6 @@
 package com.example.dilo.DiloBackend.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import java.time.LocalDate;
 
@@ -23,6 +24,7 @@ public class RegisterUserDTO {
 
     private String password;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate fechaNacimiento;
 
     private String telefono;
