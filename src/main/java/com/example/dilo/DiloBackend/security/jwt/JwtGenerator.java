@@ -22,16 +22,25 @@ public class JwtGenerator {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
+    // Original token generation (kept for compatibility)
     public String generateToken(Authentication authentication){
+        return generateToken(authentication, null);
+    }
+
+    // New token generation with optional businessId claim
+    public String generateToken(Authentication authentication, Long businessId){
         String username = authentication.getName();
         Date currentDate = new Date();
         Date expireDate = new Date(currentDate.getTime() + jwtExpiration);
 
-        String token = Jwts.builder()
+        JwtBuilder builder = Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(expireDate)
-                .signWith(getSigningKey(), Jwts.SIG.HS512)
+                .expiration(expireDate);
+        if (businessId != null) {
+            builder.claim("businessId", businessId);
+        }
+        String token = builder.signWith(getSigningKey(), Jwts.SIG.HS512)
                 .compact();
         return token;
     }
