@@ -1,8 +1,10 @@
 package com.example.dilo.DiloBackend.service.implementation;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 @Service
+@Lazy
 public class SriSoapClient {
 
 
