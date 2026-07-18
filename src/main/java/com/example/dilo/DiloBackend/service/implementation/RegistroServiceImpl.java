@@ -16,6 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList; // O HashSet si usas Set en tu modelo
+import java.util.HashSet;
+
 @Service
 @RequiredArgsConstructor
 public class RegistroServiceImpl implements RegistroService {
@@ -49,6 +52,9 @@ public class RegistroServiceImpl implements RegistroService {
         Role rolBase = roleRepository.findByNombre("USUARIO_BASE")
                 .orElseThrow(() -> new ResourceNotFoundException("Rol USUARIO_BASE no encontrado en la base de datos"));
 
+        if (usuario.getRoles() == null) {
+            usuario.setRoles(new HashSet<>()); // Cambia a new HashSet<>() si en tu modelo usas un Set
+        }
         usuario.getRoles().add(rolBase);
 
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
