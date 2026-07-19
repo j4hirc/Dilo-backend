@@ -14,6 +14,7 @@ public class MiembroNegocioResponseDTO {
     private String nombreUsuario;
     private String emailUsuario;
     private String rol;
+    private String fotoPerfil;
     private String estadoLaboral;
     private String estadoInvitacion;
     private LocalDateTime fechaVinculacion;

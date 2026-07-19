@@ -19,6 +19,7 @@ public class MiembroNegocioMapper {
         miembroNegocioResponseDTO.setNombreUsuario(entity.getUsuario().getPrimerNombre() + " " + entity.getUsuario().getApellidoPaterno());
         miembroNegocioResponseDTO.setEmailUsuario(entity.getUsuario().getEmail());
         miembroNegocioResponseDTO.setRol(entity.getRol().getNombre());
+        miembroNegocioResponseDTO.setFotoPerfil(entity.getUsuario().getFotoPerfil());
         miembroNegocioResponseDTO.setEstadoLaboral(entity.getEstadoLaboral());
         miembroNegocioResponseDTO.setEstadoInvitacion(entity.getEstadoInvitacion());
         miembroNegocioResponseDTO.setFechaVinculacion(entity.getFechaVinculacion());
