@@ -50,6 +50,9 @@ public class InventarioBodegaController {
         return ResponseEntity.ok(inventarioService.actualizarStockMinimo(negocioId, id, nuevoStockMinimo));
     }
 
+
+
+
     @PatchMapping("/{id}/cantidad-actual")
     @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'BODEGUERO')")
     public ResponseEntity<InventarioBodegaResponseDTO> actualizarCantidadActual(

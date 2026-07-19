@@ -15,6 +15,7 @@ import com.example.dilo.DiloBackend.service.InventarioBodegaService;
 import com.example.dilo.DiloBackend.service.mapper.InventarioBodegaMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -72,6 +73,7 @@ public class InventarioBodegaServiceImpl implements InventarioBodegaService {
     }
 
     @Override
+    @Transactional
     public InventarioBodegaResponseDTO actualizarStockMinimo(Long negocioId, Long id, Integer nuevoStockMinimo) {
         InventarioBodega inventario = inventarioRepository.findByIdAndNegocioId(id, negocioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro de inventario no encontrado"));
@@ -84,6 +86,7 @@ public class InventarioBodegaServiceImpl implements InventarioBodegaService {
 
 
     @Override
+    @Transactional
     public InventarioBodegaResponseDTO actualizarCantidadActual(Long negocioId, Long id, Integer nuevaCantidad) {
         InventarioBodega inventario = inventarioRepository.findByIdAndNegocioId(id, negocioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro de inventario no encontrado"));
