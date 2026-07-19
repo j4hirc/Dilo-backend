@@ -17,6 +17,7 @@ import com.example.dilo.DiloBackend.service.MiembroNegocioService;
 import com.example.dilo.DiloBackend.service.mapper.MiembroNegocioMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -69,6 +70,7 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
     }
 
     @Override
+    @Transactional
     public MiembroNegocioResponseDTO responderInvitacion(Long negocioId, Long miembroId, boolean aceptar) {
         MiembroNegocio miembro = miembroNegocioRepository.findById(miembroId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invitación no encontrada"));
