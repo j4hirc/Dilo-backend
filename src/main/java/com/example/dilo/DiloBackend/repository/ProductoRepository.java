@@ -17,6 +17,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @EntityGraph(attributePaths = {"categoria", "negocio"})
     Optional<Producto> findByIdAndNegocioId(Long id, Long negocioId);
 
+
     boolean existsByCodigoPrincipalAndNegocioId(String codigoPrincipal, Long negocioId);
 
     @Query("SELECT p FROM Producto p WHERE p.negocio.id = :negocioId AND " +

@@ -56,6 +56,7 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
+    @Transactional
     public ProductoResponseDTO crearProducto(Long negocioId, ProductoRequestDTO requestDTO, MultipartFile imagen) {
         Negocio negocio = negocioRepository.findById(negocioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
