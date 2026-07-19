@@ -124,6 +124,37 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
     }
 
     @Override
+    @Transactional
+    public MiembroNegocioResponseDTO cambiarRolMiembro(Long negocioId, Long miembroId, String nombreNuevoRol) {
+        // 1. Buscamos al miembro
+        MiembroNegocio miembro = miembroNegocioRepository.findById(miembroId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registro de miembro no encontrado"));
+
+        // 2. Verificamos que sí pertenezca al negocio desde el que se hace la petición
+        if (!miembro.getNegocio().getId().equals(negocioId)) {
+            throw new RuntimeException("El miembro no pertenece al negocio especificado");
+        }
+
+        // 3. Buscamos el nuevo rol en la base de datos por su nombre
+        Role nuevoRol = roleRepository.findByNombre(nombreNuevoRol)
+                .orElseThrow(() -> new ResourceNotFoundException("El rol " + nombreNuevoRol + " no existe en la base de datos"));
+
+        // 4. Se lo asignamos al registro del negocio
+        miembro.setRol(nuevoRol);
+
+        // 5. Como tu sistema permite varios roles por usuario, se lo sumamos a su perfil global si no lo tiene
+        Usuario usuario = miembro.getUsuario();
+        if (!usuario.getRoles().contains(nuevoRol)) {
+            usuario.getRoles().add(nuevoRol);
+            usuarioRepository.save(usuario); // Guardamos al usuario con su nuevo rol sumado
+        }
+
+        // 6. Guardamos los cambios en el negocio y retornamos
+        MiembroNegocio actualizado = miembroNegocioRepository.save(miembro);
+        return miembroNegocioMapper.toDto(actualizado);
+    }
+
+    @Override
     public MiembroNegocioResponseDTO unirseConCodigo(UnirseNegocioRequestDTO requestDTO, String emailUsuario) {
 
         Negocio negocio = negocioRepository.findByCodigoInvitacion(requestDTO.getCodigoInvitacion())

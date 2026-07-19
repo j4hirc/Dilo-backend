@@ -15,5 +15,7 @@ public interface MiembroNegocioService {
 
     MiembroNegocioResponseDTO desactivarMiembro(Long negocioId, Long miembroId);
 
+    MiembroNegocioResponseDTO cambiarRolMiembro(Long negocioId, Long miembroId, String nombreNuevoRol);
+
     MiembroNegocioResponseDTO unirseConCodigo(UnirseNegocioRequestDTO requestDTO, String emailUsuario);
 }

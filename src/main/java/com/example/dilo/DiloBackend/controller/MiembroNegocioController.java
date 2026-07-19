@@ -50,6 +50,17 @@ public class MiembroNegocioController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{miembroId}/rol")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO')")
+    public ResponseEntity<MiembroNegocioResponseDTO> cambiarRol(
+            @PathVariable Long negocioId,
+            @PathVariable Long miembroId,
+            @RequestParam("rol") String nuevoRol) {
+
+        MiembroNegocioResponseDTO response = miembroNegocioService.cambiarRolMiembro(negocioId, miembroId, nuevoRol);
+        return ResponseEntity.ok(response);
+    }
+
     @PutMapping("/{miembroId}/desactivar")
     @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO')")
     public ResponseEntity<MiembroNegocioResponseDTO> desactivarMiembro(
