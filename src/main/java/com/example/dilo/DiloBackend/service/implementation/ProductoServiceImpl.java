@@ -62,7 +62,7 @@ public class ProductoServiceImpl implements ProductoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
 
         if (productoRepository.existsByCodigoPrincipalAndNegocioId(requestDTO.getCodigoPrincipal(), negocioId)) {
-            throw new RuntimeException("Ya existe un producto con el código " + requestDTO.getCodigoPrincipal() + " en su catálogo");
+            throw new IllegalArgumentException("Ya existe un producto con el código " + requestDTO.getCodigoPrincipal() + " en su catálogo");
         }
 
         Categoria categoria = categoriaRepository.findByIdAndNegocioId(requestDTO.getCategoriaId(), negocioId)
@@ -94,7 +94,7 @@ public class ProductoServiceImpl implements ProductoService {
         if (requestDTO.getCodigoPrincipal() != null &&
                 !requestDTO.getCodigoPrincipal().equals(producto.getCodigoPrincipal()) &&
                 productoRepository.existsByCodigoPrincipalAndNegocioId(requestDTO.getCodigoPrincipal(), negocioId)) {
-            throw new RuntimeException("Ya existe otro producto con el código " + requestDTO.getCodigoPrincipal());
+            throw new IllegalArgumentException("Ya existe otro producto con el código " + requestDTO.getCodigoPrincipal());
         }
 
         Categoria categoria = categoriaRepository.findByIdAndNegocioId(requestDTO.getCategoriaId(), negocioId)
