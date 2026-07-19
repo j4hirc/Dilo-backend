@@ -69,10 +69,10 @@ public class UsuarioServiceImpl implements UsuarioService {
             usuario.setParroquia(parroquia);
         }
 
-        // Subimos la foto si existe
+        // Subimos la foto si el usuario seleccionó una
         if (foto != null && !foto.isEmpty()) {
             try {
-                String urlFoto = storageService.uploadFile(foto, "perfiles"); // Asumiendo que se guardan en el bucket "perfiles"
+                String urlFoto = storageService.uploadFile(foto, "perfiles");
                 usuario.setFotoPerfil(urlFoto);
             } catch (Exception e) {
                 throw new RuntimeException("Error al subir la foto de perfil: " + e.getMessage());
