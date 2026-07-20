@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +29,7 @@ public class ProveedorServiceImpl implements ProveedorService {
     private final ProveedorMapper proveedorMapper;
 
     @Override
+    @Transactional(readOnly = true) // 🔥 SOLUCIÓN AL ERROR 500
     public List<ProveedorResponseDTO> getAllByNegocio(Long negocioId) {
         return proveedorRepository.findByNegocioId(negocioId).stream()
                 .map(proveedorMapper::toDto)
@@ -37,6 +37,7 @@ public class ProveedorServiceImpl implements ProveedorService {
     }
 
     @Override
+    @Transactional(readOnly = true) // 🔥 SOLUCIÓN AL ERROR 500
     public ProveedorResponseDTO getById(Long id, Long negocioId) {
         Proveedor proveedor = findProveedorAndValidateNegocio(id, negocioId);
         return proveedorMapper.toDto(proveedor);
@@ -54,7 +55,6 @@ public class ProveedorServiceImpl implements ProveedorService {
 
         Proveedor proveedor = proveedorMapper.toEntity(requestDTO);
         proveedor.setNegocio(negocio);
-
         asignarCategorias(proveedor, requestDTO.getCategoriasIds());
 
         Proveedor guardado = proveedorRepository.save(proveedor);
@@ -89,9 +89,6 @@ public class ProveedorServiceImpl implements ProveedorService {
     @Transactional
     public void delete(Long id, Long negocioId) {
         Proveedor proveedor = findProveedorAndValidateNegocio(id, negocioId);
-        // Opcional: En lugar de eliminar físicamente, puedes solo desactivarlo:
-        // proveedor.setEstado(false);
-        // proveedorRepository.save(proveedor);
         proveedorRepository.delete(proveedor);
     }
 
@@ -99,6 +96,7 @@ public class ProveedorServiceImpl implements ProveedorService {
     private Proveedor findProveedorAndValidateNegocio(Long id, Long negocioId) {
         Proveedor proveedor = proveedorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado"));
+
         if (!proveedor.getNegocio().getId().equals(negocioId)) {
             throw new RuntimeException("El proveedor no pertenece a este negocio");
         }
