@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class InventarioBodegaRequestDTO {
 
@@ -20,4 +22,6 @@ public class InventarioBodegaRequestDTO {
     @NotNull(message = "El stock mínimo es obligatorio")
     @Min(value = 0, message = "El stock mínimo no puede ser negativo")
     private Integer stockMinimo;
+
+    private BigDecimal costoUnitarioInicial;
 }

@@ -43,6 +43,9 @@ public class Negocio {
     @Column(name = "direccion", nullable = false)
     private String direccion;
 
+    @Column(name = "metodo_costeo", length = 20)
+    private String metodoCosteo = "PROMEDIO";
+
     @PrePersist
     public void generarCodigoInvitacion() {
         if (this.codigoInvitacion == null || this.codigoInvitacion.isEmpty()) {

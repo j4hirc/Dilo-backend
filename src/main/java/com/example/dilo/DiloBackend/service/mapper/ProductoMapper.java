@@ -24,6 +24,10 @@ public class ProductoMapper {
         dto.setPrecioUnitario(producto.getPrecioUnitario());
         dto.setGrabaIva(producto.getGrabaIva());
 
+        // --- NUEVOS CAMPOS MAPEADOS ---
+        dto.setUnidadMedida(producto.getUnidadMedida());
+        dto.setTieneCaducidad(producto.getTieneCaducidad());
+
         return dto;
     }
 
@@ -34,6 +38,10 @@ public class ProductoMapper {
         producto.setNombre(dto.getNombre());
         producto.setPrecioUnitario(dto.getPrecioUnitario());
         producto.setGrabaIva(dto.getGrabaIva());
+
+        producto.setUnidadMedida(dto.getUnidadMedida());
+        producto.setTieneCaducidad(dto.getTieneCaducidad());
+
         return producto;
     }
 }

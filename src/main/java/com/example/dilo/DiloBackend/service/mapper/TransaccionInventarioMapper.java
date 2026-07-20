@@ -5,6 +5,8 @@ import com.example.dilo.DiloBackend.dto.response.TransaccionInventarioResponseDT
 import com.example.dilo.DiloBackend.model.TransaccionInventario;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 @Component
 public class TransaccionInventarioMapper {
 
@@ -15,6 +17,7 @@ public class TransaccionInventarioMapper {
         dto.setCantidad(transaccion.getCantidad());
         dto.setFechaTransaccion(transaccion.getFechaTransaccion());
         dto.setMotivo(transaccion.getMotivo());
+
         if (transaccion.getProducto() != null) {
             dto.setProductoNombre(transaccion.getProducto().getNombre());
         }
@@ -27,6 +30,17 @@ public class TransaccionInventarioMapper {
         if (transaccion.getBodegaDestino() != null) {
             dto.setBodegaDestinoNombre(transaccion.getBodegaDestino().getNombre());
         }
+
+        // --- MAPEO DE NUEVOS CAMPOS ---
+        dto.setCostoUnitario(transaccion.getCostoUnitario());
+        dto.setCostoTotal(transaccion.getCostoTotal());
+        dto.setMetodoAplicado(transaccion.getMetodoAplicado());
+        dto.setDocumentoReferencia(transaccion.getDocumentoReferencia());
+
+        if (transaccion.getLote() != null) {
+            dto.setNumeroLote(transaccion.getLote().getNumeroLote());
+        }
+
         return dto;
     }
 
@@ -35,6 +49,16 @@ public class TransaccionInventarioMapper {
         transaccion.setTipo(dto.getTipo().toUpperCase());
         transaccion.setCantidad(dto.getCantidad());
         transaccion.setMotivo(dto.getMotivo());
+
+        // --- MAPEO DE NUEVOS CAMPOS ---
+        transaccion.setCostoUnitario(dto.getCostoUnitario());
+        transaccion.setDocumentoReferencia(dto.getDocumentoReferencia());
+
+        // Cálculo preliminar del costo total (si el service no lo sobrescribe después)
+        if (dto.getCostoUnitario() != null && dto.getCantidad() != null) {
+            transaccion.setCostoTotal(dto.getCostoUnitario().multiply(new BigDecimal(dto.getCantidad())));
+        }
+
         return transaccion;
     }
 }

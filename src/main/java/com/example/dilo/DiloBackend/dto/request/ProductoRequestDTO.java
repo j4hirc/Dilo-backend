@@ -24,4 +24,9 @@ public class ProductoRequestDTO {
 
     @NotNull(message = "Debe especificar si graba IVA")
     private Boolean grabaIva;
+
+    // --- NUEVOS CAMPOS ---
+    private String unidadMedida;
+
+    private Boolean tieneCaducidad;
 }

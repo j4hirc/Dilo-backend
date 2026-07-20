@@ -4,6 +4,7 @@ import com.example.dilo.DiloBackend.dto.request.DetalleFacturaRequestDTO;
 import com.example.dilo.DiloBackend.dto.request.FacturaRequestDTO;
 import com.example.dilo.DiloBackend.dto.request.TransaccionInventarioRequestDTO;
 import com.example.dilo.DiloBackend.dto.response.FacturaResponseDTO;
+import com.example.dilo.DiloBackend.dto.response.TransaccionInventarioResponseDTO; // <-- Importante añadir este
 import com.example.dilo.DiloBackend.exception.ResourceNotFoundException;
 import com.example.dilo.DiloBackend.model.*;
 import com.example.dilo.DiloBackend.repository.*;
@@ -68,10 +69,6 @@ public class FacturaServiceImpl implements FacturaService {
             Producto producto = productoRepository.findById(dto.getProductoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + dto.getProductoId()));
 
-            // Antes: se traia TODO el inventario de la bodega (findByBodegaIdAndNegocioId)
-            // y se filtraba en memoria por producto, repitiendo esa consulta completa
-            // por cada linea de la factura (N+1). Ahora se pide directamente la fila que
-            // corresponde al producto.
             InventarioBodega inventario = inventarioRepository
                     .findByBodegaIdAndNegocioIdAndProductoId(dto.getBodegaId(), negocioId, producto.getId())
                     .orElseThrow(() -> new RuntimeException("El producto '" + producto.getNombre() + "' no está registrado en la bodega seleccionada."));
@@ -130,10 +127,11 @@ public class FacturaServiceImpl implements FacturaService {
 
         Factura facturaGuardada = facturaRepository.save(factura);
 
+        // --- INICIO DEL CAMBIO CLAVE ---
         for (DetalleFactura detalle : detallesParaGuardar) {
             detalle.setFactura(facturaGuardada);
-            detalleFacturaRepository.save(detalle);
 
+            // 1. Configuramos el request para el kardex
             TransaccionInventarioRequestDTO egresoVenta = new TransaccionInventarioRequestDTO();
             egresoVenta.setTipo("EGRESO");
             egresoVenta.setProductoId(detalle.getProducto().getId());
@@ -141,7 +139,15 @@ public class FacturaServiceImpl implements FacturaService {
             egresoVenta.setCantidad(detalle.getCantidad());
             egresoVenta.setMotivo("Venta según Factura #" + facturaGuardada.getNumeroFactura());
 
-            transaccionService.registrarTransaccion(negocioId, emailUsuario, egresoVenta);
+            // 2. Procesamos el egreso y capturamos el costo que calculó el algoritmo (FIFO/LIFO/Promedio)
+            TransaccionInventarioResponseDTO respuestaTx = transaccionService.registrarTransaccion(negocioId, emailUsuario, egresoVenta);
+
+            // 3. Guardamos los costos reales en la entidad
+            detalle.setCostoUnitarioReal(respuestaTx.getCostoUnitario());
+            detalle.setCostoTotalReal(respuestaTx.getCostoTotal());
+
+            // 4. AHORA SÍ guardamos el detalle en la base de datos
+            detalleFacturaRepository.save(detalle);
         }
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -158,17 +164,13 @@ public class FacturaServiceImpl implements FacturaService {
     @Transactional(readOnly = true)
     public List<FacturaResponseDTO> obtenerFacturasPorNegocio(Long negocioId) {
 
-        // 1. Validamos que el negocio exista
         negocioRepository.findById(negocioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
 
-        // 2. Buscamos todas las facturas de este negocio (Asegúrate de tener este método en tu FacturaRepository)
         List<Factura> facturas = facturaRepository.findByNegocioIdOrderByFechaEmisionDesc(negocioId);
 
-        // 3. Mapeamos la lista de Entidades a DTOs
         return facturas.stream()
                 .map(factura -> {
-                    // Como tu mapper requiere los detalles, los buscamos por cada factura
                     List<DetalleFactura> detalles = detalleFacturaRepository.findByFacturaId(factura.getId());
                     return facturaMapper.toDto(factura, detalles);
                 })

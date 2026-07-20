@@ -25,7 +25,7 @@ public class ProductoServiceImpl implements ProductoService {
     private final ProductoRepository productoRepository;
     private final NegocioRepository negocioRepository;
     private final CategoriaRepository categoriaRepository;
-    private final SupabaseStorageService storageService; // Tu servicio de subida de archivos
+    private final SupabaseStorageService storageService;
     private final ProductoMapper productoMapper;
 
     @Override
@@ -72,9 +72,13 @@ public class ProductoServiceImpl implements ProductoService {
         producto.setNegocio(negocio);
         producto.setCategoria(categoria);
 
+        // Manejo de valores por defecto si no vienen en el request
+        if (producto.getUnidadMedida() == null) producto.setUnidadMedida("UNIDADES");
+        if (producto.getTieneCaducidad() == null) producto.setTieneCaducidad(false);
+
         if (imagen != null && !imagen.isEmpty()) {
             try {
-                String urlImagen = storageService.uploadFile(imagen, "productos"); // Se guardará en el bucket 'productos'
+                String urlImagen = storageService.uploadFile(imagen, "productos");
                 producto.setImagen(urlImagen);
             } catch (Exception e) {
                 throw new RuntimeException("Error al subir la imagen del producto: " + e.getMessage());
@@ -106,6 +110,10 @@ public class ProductoServiceImpl implements ProductoService {
         producto.setPrecioUnitario(requestDTO.getPrecioUnitario());
         producto.setGrabaIva(requestDTO.getGrabaIva());
         producto.setCategoria(categoria);
+
+        // --- NUEVOS CAMPOS ---
+        producto.setUnidadMedida(requestDTO.getUnidadMedida() != null ? requestDTO.getUnidadMedida() : "UNIDADES");
+        producto.setTieneCaducidad(requestDTO.getTieneCaducidad() != null ? requestDTO.getTieneCaducidad() : false);
 
         if (imagen != null && !imagen.isEmpty()) {
             try {

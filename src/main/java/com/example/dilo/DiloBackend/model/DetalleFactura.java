@@ -40,4 +40,10 @@ public class DetalleFactura {
 
     @Column(name = "subtotal_item", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotalItem;
+
+    @Column(name = "costo_unitario_real", precision = 12, scale = 4)
+    private BigDecimal costoUnitarioReal;
+
+    @Column(name = "costo_total_real", precision = 12, scale = 4)
+    private BigDecimal costoTotalReal;
 }

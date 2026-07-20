@@ -2,6 +2,8 @@ package com.example.dilo.DiloBackend.dto.response;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class InventarioBodegaResponseDTO {
     private Long id;
@@ -13,4 +15,7 @@ public class InventarioBodegaResponseDTO {
     private Integer cantidadActual;
     private Integer stockMinimo;
     private boolean alertaStock;
+
+    private BigDecimal costoPromedio;
+    private BigDecimal valorInventario;
 }
