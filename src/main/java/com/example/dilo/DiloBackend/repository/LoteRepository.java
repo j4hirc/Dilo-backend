@@ -12,6 +12,8 @@ import java.util.List;
 @Repository
 public interface LoteRepository extends JpaRepository<Lote, Long> {
 
+    List<Lote> findByCompraId(Long compraId);
+
     @Query("SELECT l FROM Lote l WHERE l.producto.id = :productoId AND l.bodega.id = :bodegaId " +
             "AND l.negocio.id = :negocioId AND l.estado = 'ACTIVO' AND l.cantidadDisponible > 0 " +
             "ORDER BY l.fechaIngreso ASC")

@@ -11,6 +11,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/negocios/{negocioId}/compras")
 @RequiredArgsConstructor
@@ -30,5 +32,11 @@ public class CompraController {
 
         CompraResponseDTO compraRegistrada = compraService.registrarCompra(negocioId, emailUsuario, requestDTO);
         return new ResponseEntity<>(compraRegistrada, HttpStatus.CREATED);
+    }
+
+    @GetMapping
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'SUPER_ADMIN', 'PROPIETARIO', 'BODEGUERO')")
+    public ResponseEntity<List<CompraResponseDTO>> obtenerCompras(@PathVariable Long negocioId) {
+        return ResponseEntity.ok(compraService.obtenerComprasPorNegocio(negocioId));
     }
 }

@@ -8,5 +8,6 @@ import java.util.List;
 
 @Repository
 public interface CompraRepository extends JpaRepository<Compra, Long> {
+    List<Compra> findByNegocioIdOrderByFechaCompraDesc(Long negocioId);
     List<Compra> findByNegocioId(Long negocioId);
 }

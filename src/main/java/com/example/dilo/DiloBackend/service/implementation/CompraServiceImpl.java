@@ -129,6 +129,20 @@ public class CompraServiceImpl implements CompraService {
         return compraMapper.toDto(compraGuardada, lotesGenerados);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<CompraResponseDTO> obtenerComprasPorNegocio(Long negocioId) {
+        List<Compra> compras = compraRepository.findByNegocioIdOrderByFechaCompraDesc(negocioId);
+
+        // 2. Las transformamos a DTO, buscando los lotes de cada una para contar los items
+        return compras.stream()
+                .map(compra -> {
+                    List<Lote> lotesDeEstaCompra = loteRepository.findByCompraId(compra.getId());
+                    return compraMapper.toDto(compra, lotesDeEstaCompra);
+                })
+                .toList();
+    }
+
     // Métodos auxiliares idénticos a los de antes
     private InventarioBodega obtenerOCrearInventario(Producto producto, Bodega bodega, Long negocioId) {
         return inventarioRepository.findByBodegaIdAndNegocioId(bodega.getId(), negocioId).stream()
