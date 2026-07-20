@@ -25,7 +25,6 @@ public class InventarioBodegaServiceImpl implements InventarioBodegaService {
     private final NegocioRepository negocioRepository;
     private final InventarioBodegaMapper inventarioMapper;
 
-    // Inyectamos los nuevos repositorios
     private final LoteRepository loteRepository;
     private final TransaccionInventarioRepository transaccionRepository;
 
@@ -58,8 +57,7 @@ public class InventarioBodegaServiceImpl implements InventarioBodegaService {
         Bodega bodega = bodegaRepository.findByIdAndNegocioId(requestDTO.getBodegaId(), negocioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bodega no encontrada en este negocio"));
 
-        if (inventarioRepository.existsByProductoIdAndBodegaIdAndNegocioId(
-                producto.getId(), bodega.getId(), negocioId)) {
+        if (inventarioRepository.existsByProductoIdAndBodegaIdAndNegocioId(producto.getId(), bodega.getId(), negocioId)) {
             throw new RuntimeException("El producto ya está registrado en esta bodega. Utilice el módulo de transacciones para modificar el stock.");
         }
 
@@ -87,6 +85,9 @@ public class InventarioBodegaServiceImpl implements InventarioBodegaService {
             loteInicial.setCostoTotal(costoUnitario.multiply(cantidadBD));
             loteInicial.setFechaIngreso(LocalDateTime.now());
             loteInicial.setEstado("ACTIVO");
+
+            // --- NUEVO: ASIGNACIÓN DE FECHA DE CADUCIDAD ---
+            loteInicial.setFechaCaducidad(requestDTO.getFechaCaducidad());
 
             loteInicial = loteRepository.save(loteInicial);
 
@@ -137,10 +138,6 @@ public class InventarioBodegaServiceImpl implements InventarioBodegaService {
             throw new RuntimeException("El stock físico no puede ser negativo");
         }
 
-        // ATENCIÓN: Al implementar lotes, modificar el stock directamente desde aquí desbalancea
-        // la relación física (cantidad_actual) vs la contable (lotes disponibles).
-        // Se mantiene este método por compatibilidad, pero en el futuro los ajustes manuales
-        // deberían pasar por TransaccionInventarioService (tipo AJUSTE).
         inventario.setCantidadActual(nuevaCantidad);
         InventarioBodega actualizado = inventarioRepository.save(inventario);
 
