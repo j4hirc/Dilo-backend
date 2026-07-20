@@ -33,6 +33,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
     private final LoteRepository loteRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<TransaccionInventarioResponseDTO> obtenerKardexGeneral(Long negocioId) {
         return transaccionRepository.obtenerKardexPorNegocio(negocioId).stream()
                 .map(transaccionMapper::toDto)
@@ -40,6 +41,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TransaccionInventarioResponseDTO> obtenerKardexPorProducto(Long negocioId, Long productoId) {
         return transaccionRepository.obtenerKardexPorProducto(negocioId, productoId).stream()
                 .map(transaccionMapper::toDto)
