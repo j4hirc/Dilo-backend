@@ -68,6 +68,7 @@ public class InventarioBodegaController {
         List<Map<String, Object>> response = lotes.stream().map(lote -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", lote.getId());
+            map.put("numeroLote", lote.getNumeroLote());
             map.put("cantidadInicial", lote.getCantidadInicial());
             map.put("cantidadDisponible", lote.getCantidadDisponible());
             map.put("costoUnitario", lote.getCostoUnitario());
