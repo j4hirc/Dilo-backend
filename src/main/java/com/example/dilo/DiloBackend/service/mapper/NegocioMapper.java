@@ -15,6 +15,9 @@ public class NegocioMapper {
         entity.setRazonSocial(negocio.getRazonSocial());
         entity.setDireccion(negocio.getDireccion());
         entity.setObligadoContabilidad(negocio.getObligadoContabilidad());
+        if (negocio.getMetodoCosteo() != null && !negocio.getMetodoCosteo().isEmpty()) {
+            entity.setMetodoCosteo(negocio.getMetodoCosteo().toUpperCase());
+        }
         return entity;
     }
 
@@ -28,6 +31,7 @@ public class NegocioMapper {
         negocioResponseDTO.setObligadoContabilidad(entity.getObligadoContabilidad());
         negocioResponseDTO.setCodigoInvitacion(entity.getCodigoInvitacion());
         negocioResponseDTO.setRutaImagen(entity.getRutaImagen());
+        negocioResponseDTO.setMetodoCosteo(entity.getMetodoCosteo());
         return negocioResponseDTO;
     }
 
