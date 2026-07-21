@@ -12,7 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/negocios/{negocioId}/inventario")
@@ -53,16 +56,27 @@ public class InventarioBodegaController {
         return ResponseEntity.ok(inventarioService.actualizarStockMinimo(negocioId, id, nuevoStockMinimo));
     }
 
+    @GetMapping("/bodegas/{bodegaId}/productos/{productoId}/lotes")
     @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'SUPER_ADMIN', 'PROPIETARIO', 'BODEGUERO', 'VENDEDOR')")
-    public ResponseEntity<List<Lote>> obtenerLotesActivos(
+    public ResponseEntity<List<Map<String, Object>>> obtenerLotesActivos(
             @PathVariable Long negocioId,
             @PathVariable Long bodegaId,
             @PathVariable Long productoId) {
 
         List<Lote> lotes = loteRepository.findLotesActivosFIFO(productoId, bodegaId, negocioId);
-        return ResponseEntity.ok(lotes);
-    }
 
+        List<Map<String, Object>> response = lotes.stream().map(lote -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", lote.getId());
+            map.put("cantidadInicial", lote.getCantidadInicial());
+            map.put("cantidadDisponible", lote.getCantidadDisponible());
+            map.put("costoUnitario", lote.getCostoUnitario());
+            map.put("fechaCaducidad", lote.getFechaCaducidad());
+            return map;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
 
 
 
