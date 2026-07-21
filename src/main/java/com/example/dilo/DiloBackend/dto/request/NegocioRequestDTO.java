@@ -22,4 +22,8 @@
         @NotNull(message = "Debe especificar si está obligado a llevar contabilidad")
         private Boolean obligadoContabilidad;
 
+
+        // Agrega este campo a tu DTO
+        private String metodoCosteo;
+
     }

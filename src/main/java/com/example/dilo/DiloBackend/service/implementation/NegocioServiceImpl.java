@@ -57,13 +57,19 @@ public class NegocioServiceImpl implements NegocioService {
                 .map(negocioMapper::toDto)
                 .toList();
     }
-
     @Override
     public NegocioResponseDTO createNegocio(NegocioRequestDTO negocioRequestDTO, MultipartFile imagen, String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado en el sistema"));
 
         Negocio negocio = negocioMapper.toEntity(negocioRequestDTO);
+
+        // 🔥 NUEVO: Validar y asignar el método de costeo al nacer el negocio
+        if (negocioRequestDTO.getMetodoCosteo() != null && !negocioRequestDTO.getMetodoCosteo().isEmpty()) {
+            negocio.setMetodoCosteo(negocioRequestDTO.getMetodoCosteo().toUpperCase());
+        } else {
+            negocio.setMetodoCosteo("PROMEDIO"); // Valor por defecto de seguridad
+        }
 
         try {
             if (imagen != null && !imagen.isEmpty()) {
@@ -105,6 +111,10 @@ public class NegocioServiceImpl implements NegocioService {
         negocioExistente.setNombreComercial(requestDTO.getNombreComercial());
         negocioExistente.setDireccion(requestDTO.getDireccion());
         negocioExistente.setObligadoContabilidad(requestDTO.getObligadoContabilidad());
+
+        if (requestDTO.getMetodoCosteo() != null) {
+            negocioExistente.setMetodoCosteo(requestDTO.getMetodoCosteo().toUpperCase());
+        }
 
         try {
             if (imagen != null && !imagen.isEmpty()) {

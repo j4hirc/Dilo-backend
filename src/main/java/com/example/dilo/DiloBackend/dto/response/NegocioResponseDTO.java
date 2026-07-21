@@ -7,21 +7,15 @@ import java.time.LocalDateTime;
 public class NegocioResponseDTO {
 
     private Long idNegocio;
-
     private String ruc;
-
     private String razonSocial;
-
     private String nombreComercial;
-
     private String direccion;
-
     private Boolean obligadoContabilidad;
-
     private String codigoInvitacion;
-
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
-
+    private LocalDateTime fechaCreacion;
     private String rutaImagen;
 
+    // 🔥 NUEVO CAMPO: Para que Angular sepa qué método está activo
+    private String metodoCosteo;
 }

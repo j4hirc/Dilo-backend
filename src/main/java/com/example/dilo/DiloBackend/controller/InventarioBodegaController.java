@@ -2,6 +2,8 @@ package com.example.dilo.DiloBackend.controller;
 
 import com.example.dilo.DiloBackend.dto.request.InventarioBodegaRequestDTO;
 import com.example.dilo.DiloBackend.dto.response.InventarioBodegaResponseDTO;
+import com.example.dilo.DiloBackend.model.Lote;
+import com.example.dilo.DiloBackend.repository.LoteRepository;
 import com.example.dilo.DiloBackend.service.InventarioBodegaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import java.util.List;
 public class InventarioBodegaController {
 
     private final InventarioBodegaService inventarioService;
+    private final LoteRepository loteRepository;
 
     @GetMapping
     @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
@@ -48,6 +51,16 @@ public class InventarioBodegaController {
             @PathVariable Long id,
             @RequestParam("valor") Integer nuevoStockMinimo) {
         return ResponseEntity.ok(inventarioService.actualizarStockMinimo(negocioId, id, nuevoStockMinimo));
+    }
+
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'SUPER_ADMIN', 'PROPIETARIO', 'BODEGUERO', 'VENDEDOR')")
+    public ResponseEntity<List<Lote>> obtenerLotesActivos(
+            @PathVariable Long negocioId,
+            @PathVariable Long bodegaId,
+            @PathVariable Long productoId) {
+
+        List<Lote> lotes = loteRepository.findLotesActivosFIFO(productoId, bodegaId, negocioId);
+        return ResponseEntity.ok(lotes);
     }
 
 
