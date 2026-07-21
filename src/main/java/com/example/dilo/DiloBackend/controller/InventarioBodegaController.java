@@ -72,6 +72,8 @@ public class InventarioBodegaController {
             map.put("cantidadInicial", lote.getCantidadInicial());
             map.put("cantidadDisponible", lote.getCantidadDisponible());
             map.put("costoUnitario", lote.getCostoUnitario());
+            map.put("fechaIngreso", lote.getFechaIngreso());
+
             map.put("fechaCaducidad", lote.getFechaCaducidad());
             return map;
         }).collect(Collectors.toList());
