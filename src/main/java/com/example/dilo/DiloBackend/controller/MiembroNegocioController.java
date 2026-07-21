@@ -3,6 +3,10 @@ package com.example.dilo.DiloBackend.controller;
 import com.example.dilo.DiloBackend.dto.request.MiembroNegocioRequestDTO;
 import com.example.dilo.DiloBackend.dto.request.UnirseNegocioRequestDTO;
 import com.example.dilo.DiloBackend.dto.response.MiembroNegocioResponseDTO;
+import com.example.dilo.DiloBackend.model.MiembroNegocio;
+import com.example.dilo.DiloBackend.model.Usuario;
+import com.example.dilo.DiloBackend.repository.MiembroNegocioRepository;
+import com.example.dilo.DiloBackend.repository.UsuarioRepository;
 import com.example.dilo.DiloBackend.service.MiembroNegocioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/negocios/{negocioId}/miembros")
@@ -21,6 +26,8 @@ import java.util.List;
 public class MiembroNegocioController {
 
     private final MiembroNegocioService miembroNegocioService;
+    private final MiembroNegocioRepository miembroNegocioRepository;
+    private final UsuarioRepository usuarioRepository;
 
     @GetMapping
     @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
@@ -37,6 +44,21 @@ public class MiembroNegocioController {
 
         MiembroNegocioResponseDTO response = miembroNegocioService.invitarMiembro(negocioId, requestDTO);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/verificar-estado")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> verificarEstado(Authentication authentication) {
+        String email = authentication.getName();
+        Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
+        if (usuario == null) {
+            return ResponseEntity.ok(Map.of("tienePendiente", false));
+        }
+        List<MiembroNegocio> miembros = miembroNegocioRepository.findByUsuarioId(usuario.getId());
+        boolean tienePendiente = miembros.stream()
+                .anyMatch(m -> "PENDIENTE".equalsIgnoreCase(m.getEstadoInvitacion()) ||
+                        "PENDIENTE".equalsIgnoreCase(m.getEstadoLaboral()));
+        return ResponseEntity.ok(Map.of("tienePendiente", tienePendiente));
     }
 
     @PutMapping("/{miembroId}/responder")
