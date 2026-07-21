@@ -31,8 +31,6 @@ public class CompraServiceImpl implements CompraService {
     private final LoteRepository loteRepository;
     private final InventarioBodegaRepository inventarioRepository;
     private final TransaccionInventarioRepository transaccionRepository;
-
-    // Inyectamos el nuevo Mapper
     private final CompraMapper compraMapper;
 
     @Override
@@ -52,7 +50,6 @@ public class CompraServiceImpl implements CompraService {
                 .filter(b -> b.getNegocio().getId().equals(negocioId))
                 .orElseThrow(() -> new ResourceNotFoundException("Bodega no encontrada"));
 
-        // 1. Crear cabecera de la Compra
         Compra compra = new Compra();
         compra.setNegocio(negocio);
         compra.setProveedor(proveedor);
@@ -65,7 +62,9 @@ public class CompraServiceImpl implements CompraService {
 
         Compra compraGuardada = compraRepository.save(compra);
 
-        // 2. Procesar cada detalle (Lotes y Kardex)
+        // 🔥 OBTENEMOS LA CANTIDAD DE LOTES DEL NEGOCIO UNA SOLA VEZ ANTES DEL BUCLE
+        long cantidadLotesActuales = loteRepository.countByNegocioId(negocioId);
+
         for (DetalleCompraRequestDTO detalle : requestDTO.getDetalles()) {
             Producto producto = productoRepository.findById(detalle.getProductoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + detalle.getProductoId()));
@@ -76,12 +75,16 @@ public class CompraServiceImpl implements CompraService {
 
             totalCompra = totalCompra.add(costoTotalLote);
 
-            // 2.1 Crear el Lote
+            // 🔥 AUMENTAMOS EL CONTADOR Y GENERAMOS EL CÓDIGO DEL LOTE
+            cantidadLotesActuales++;
+            String codigoLoteGenerado = String.format("LOTE-%05d", cantidadLotesActuales);
+
             Lote lote = new Lote();
             lote.setNegocio(negocio);
             lote.setProducto(producto);
             lote.setBodega(bodega);
             lote.setCompra(compraGuardada);
+            lote.setNumeroLote(codigoLoteGenerado); // 🔥 SE LO ASIGNAMOS AQUÍ
             lote.setCantidadInicial(cantidad);
             lote.setCantidadDisponible(cantidad);
             lote.setCostoUnitario(costoUnitario);
@@ -91,18 +94,15 @@ public class CompraServiceImpl implements CompraService {
             lote.setEstado("ACTIVO");
 
             Lote loteGuardado = loteRepository.save(lote);
-            lotesGenerados.add(loteGuardado); // Lo agregamos a la lista para el DTO
+            lotesGenerados.add(loteGuardado);
 
-            // 2.2 Actualizar Inventario Físico
             InventarioBodega inventario = obtenerOCrearInventario(producto, bodega, negocioId);
             int stockAnterior = inventario.getCantidadActual();
             inventario.setCantidadActual(stockAnterior + detalle.getCantidad());
             inventarioRepository.save(inventario);
 
-            // 2.3 Recalcular Costo Promedio del Producto
             recalcularCostoPromedioProducto(producto, cantidad, costoUnitario, inventario.getCantidadActual());
 
-            // 2.4 Registrar en Kardex (TransaccionInventario)
             TransaccionInventario transaccion = new TransaccionInventario();
             transaccion.setNegocio(negocio);
             transaccion.setProducto(producto);
@@ -121,11 +121,9 @@ public class CompraServiceImpl implements CompraService {
             transaccionRepository.save(transaccion);
         }
 
-        // 3. Actualizar el total de la compra y guardarla definitivamente
         compraGuardada.setTotalCompra(totalCompra);
         compraGuardada = compraRepository.save(compraGuardada);
 
-        // 4. Retornar el DTO usando el Mapper
         return compraMapper.toDto(compraGuardada, lotesGenerados);
     }
 
@@ -134,7 +132,6 @@ public class CompraServiceImpl implements CompraService {
     public List<CompraResponseDTO> obtenerComprasPorNegocio(Long negocioId) {
         List<Compra> compras = compraRepository.findByNegocioIdOrderByFechaCompraDesc(negocioId);
 
-        // 2. Las transformamos a DTO, buscando los lotes de cada una para contar los items
         return compras.stream()
                 .map(compra -> {
                     List<Lote> lotesDeEstaCompra = loteRepository.findByCompraId(compra.getId());
@@ -143,7 +140,6 @@ public class CompraServiceImpl implements CompraService {
                 .toList();
     }
 
-    // Métodos auxiliares idénticos a los de antes
     private InventarioBodega obtenerOCrearInventario(Producto producto, Bodega bodega, Long negocioId) {
         return inventarioRepository.findByBodegaIdAndNegocioId(bodega.getId(), negocioId).stream()
                 .filter(i -> i.getProducto().getId().equals(producto.getId()))
@@ -154,7 +150,7 @@ public class CompraServiceImpl implements CompraService {
                     nuevoInventario.setBodega(bodega);
                     nuevoInventario.setNegocio(bodega.getNegocio());
                     nuevoInventario.setCantidadActual(0);
-                    nuevoInventario.setStockMinimo(5); // Valor por defecto
+                    nuevoInventario.setStockMinimo(5);
                     return nuevoInventario;
                 });
     }

@@ -35,5 +35,7 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
     List<Lote> findLotesProximosAVencer(@Param("negocioId") Long negocioId,
                                         @Param("fechaLimite") LocalDate fechaLimite);
 
+    long countByNegocioId(Long negocioId);
+
     Lote findFirstByProductoIdAndNegocioIdOrderByFechaIngresoDesc(Long productoId, Long negocioId);
 }

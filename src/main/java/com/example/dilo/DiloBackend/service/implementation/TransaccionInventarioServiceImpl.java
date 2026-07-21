@@ -66,7 +66,6 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         transaccion.setUsuarioResponsable(usuario);
         transaccion.setFechaTransaccion(LocalDateTime.now());
 
-        // Asignar el método configurado en el negocio
         String metodoCosteo = (negocio.getMetodoCosteo() != null) ? negocio.getMetodoCosteo() : "PROMEDIO";
         transaccion.setMetodoAplicado(metodoCosteo);
 
@@ -83,7 +82,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
                 procesarTransferencia(transaccion, requestDTO, negocioId, producto, metodoCosteo);
                 break;
             default:
-                throw new RuntimeException("Tipo de transacción no válido. Use INGRESO, EGRESO o TRANSFERENCIA.");
+                throw new RuntimeException("Tipo de transacción no válido.");
         }
 
         TransaccionInventario guardada = transaccionRepository.save(transaccion);
@@ -98,15 +97,19 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         inventario.setCantidadActual(inventario.getCantidadActual() + dto.getCantidad());
         inventarioRepository.save(inventario);
 
-        // LÓGICA DE LOTES: Crear un lote para este ingreso manual
         BigDecimal costoUnitario = dto.getCostoUnitario() != null ? dto.getCostoUnitario() : producto.getCostoPromedioActual();
         BigDecimal cantidad = new BigDecimal(dto.getCantidad());
         BigDecimal costoTotal = costoUnitario.multiply(cantidad);
+
+        // 🔥 GENERAMOS CÓDIGO DE LOTE
+        long cantidadLotesActuales = loteRepository.countByNegocioId(negocioId);
+        String codigoLoteGenerado = String.format("LOTE-%05d", cantidadLotesActuales + 1);
 
         Lote nuevoLote = new Lote();
         nuevoLote.setNegocio(bodegaDestino.getNegocio());
         nuevoLote.setProducto(producto);
         nuevoLote.setBodega(bodegaDestino);
+        nuevoLote.setNumeroLote(codigoLoteGenerado); // 🔥 SE LO ASIGNAMOS AL LOTE
         nuevoLote.setCantidadInicial(cantidad);
         nuevoLote.setCantidadDisponible(cantidad);
         nuevoLote.setCostoUnitario(costoUnitario);
@@ -116,10 +119,8 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
 
         Lote loteGuardado = loteRepository.save(nuevoLote);
 
-        // Recalcular el Promedio Ponderado del producto si es un ingreso valorado
         recalcularCostoPromedioProducto(producto, cantidad, costoUnitario, inventario.getCantidadActual());
 
-        // Actualizar transacción
         transaccion.setCostoUnitario(costoUnitario);
         transaccion.setCostoTotal(costoTotal);
         transaccion.setLote(loteGuardado);
@@ -138,7 +139,6 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
             throw new RuntimeException("Stock insuficiente en la bodega física. Disponible: " + inventario.getCantidadActual());
         }
 
-        // LÓGICA DE LOTES: Descontar según el método (FIFO, LIFO, PROMEDIO)
         List<Lote> lotesDisponibles = "LIFO".equals(metodoCosteo)
                 ? loteRepository.findLotesActivosLIFO(producto.getId(), bodegaOrigen.getId(), negocioId)
                 : loteRepository.findLotesActivosFIFO(producto.getId(), bodegaOrigen.getId(), negocioId);
@@ -153,14 +153,12 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
             int cantidadEnLote = lote.getCantidadDisponible().intValue();
             int cantidadATomar = Math.min(cantidadRequerida, cantidadEnLote);
 
-            // Descontar del lote
             lote.setCantidadDisponible(lote.getCantidadDisponible().subtract(new BigDecimal(cantidadATomar)));
             if (lote.getCantidadDisponible().compareTo(BigDecimal.ZERO) == 0) {
                 lote.setEstado("AGOTADO");
             }
             loteRepository.save(lote);
 
-            // Calcular el costo de esta fracción extraída
             BigDecimal costoAAplicar = "PROMEDIO".equals(metodoCosteo) ? producto.getCostoPromedioActual() : lote.getCostoUnitario();
             costoTotalEgreso = costoTotalEgreso.add(costoAAplicar.multiply(new BigDecimal(cantidadATomar)));
 
@@ -172,11 +170,9 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
             throw new RuntimeException("Inconsistencia: El stock físico no coincide con los lotes disponibles.");
         }
 
-        // Actualizar stock físico general
         inventario.setCantidadActual(inventario.getCantidadActual() - dto.getCantidad());
         inventarioRepository.save(inventario);
 
-        // Guardar costos en la transacción
         transaccion.setCostoTotal(costoTotalEgreso);
         transaccion.setCostoUnitario(costoTotalEgreso.divide(new BigDecimal(dto.getCantidad()), 4, RoundingMode.HALF_UP));
         transaccion.setLote(ultimoLoteTocado);
@@ -185,9 +181,6 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
     }
 
     private void procesarTransferencia(TransaccionInventario transaccion, TransaccionInventarioRequestDTO dto, Long negocioId, Producto producto, String metodoCosteo) {
-        // Una transferencia es esencialmente un Egreso de la Bodega A, y un Ingreso exacto en la Bodega B.
-        // Reutilizamos la lógica matemática de Egreso para sacar el costo exacto de los lotes de origen.
-
         Bodega bodegaOrigen = buscarBodega(dto.getBodegaOrigenId(), negocioId, "origen");
         Bodega bodegaDestino = buscarBodega(dto.getBodegaDestinoId(), negocioId, "destino");
 
@@ -198,25 +191,25 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         transaccion.setBodegaOrigen(bodegaOrigen);
         transaccion.setBodegaDestino(bodegaDestino);
 
-        // 1. Efectuar el Egreso lógico de origen (esto deduce los lotes y calcula el costo real transferido)
         procesarEgreso(transaccion, dto, negocioId, producto, metodoCosteo);
 
-        // En este punto, 'transaccion' ya tiene el costoUnitario y costoTotal extraído de la bodega Origen.
-
-        // 2. Efectuar el Ingreso en el destino
         InventarioBodega inventarioDestino = obtenerOCrearInventario(producto, bodegaDestino, negocioId);
         inventarioDestino.setCantidadActual(inventarioDestino.getCantidadActual() + dto.getCantidad());
         inventarioRepository.save(inventarioDestino);
 
-        // 3. Crear el nuevo Lote en la bodega destino conservando el costo de transferencia
+        // 🔥 GENERAMOS CÓDIGO DE LOTE PARA LA BODEGA DESTINO
+        long cantidadLotesActuales = loteRepository.countByNegocioId(negocioId);
+        String codigoLoteGenerado = String.format("LOTE-%05d", cantidadLotesActuales + 1);
+
         BigDecimal cantidadBD = new BigDecimal(dto.getCantidad());
         Lote loteTransferido = new Lote();
         loteTransferido.setNegocio(bodegaDestino.getNegocio());
         loteTransferido.setProducto(producto);
         loteTransferido.setBodega(bodegaDestino);
+        loteTransferido.setNumeroLote(codigoLoteGenerado); // 🔥 SE LO ASIGNAMOS
         loteTransferido.setCantidadInicial(cantidadBD);
         loteTransferido.setCantidadDisponible(cantidadBD);
-        loteTransferido.setCostoUnitario(transaccion.getCostoUnitario()); // Costo heredado
+        loteTransferido.setCostoUnitario(transaccion.getCostoUnitario());
         loteTransferido.setCostoTotal(transaccion.getCostoTotal());
         loteTransferido.setFechaIngreso(LocalDateTime.now());
         loteTransferido.setEstado("ACTIVO");
@@ -225,10 +218,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
     }
 
     private void recalcularCostoPromedioProducto(Producto producto, BigDecimal cantidadIngresada, BigDecimal costoUnitarioIngreso, int nuevoStockFisicoTotal) {
-        // Fórmula Promedio Ponderado:
-        // Nuevo Costo = [ (Stock Anterior * Costo Anterior) + (Cant Ingresada * Costo Ingreso) ] / Nuevo Stock Físico
-
-        if (nuevoStockFisicoTotal == 0) return; // Prevención división por cero
+        if (nuevoStockFisicoTotal == 0) return;
 
         BigDecimal stockAnterior = new BigDecimal(nuevoStockFisicoTotal).subtract(cantidadIngresada);
         BigDecimal costoPromedioAnterior = producto.getCostoPromedioActual() != null ? producto.getCostoPromedioActual() : BigDecimal.ZERO;
@@ -260,22 +250,18 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
                     nuevoInventario.setBodega(bodega);
                     nuevoInventario.setNegocio(negocioRepository.getReferenceById(negocioId));
                     nuevoInventario.setCantidadActual(0);
-                    nuevoInventario.setStockMinimo(5); // Valor por defecto
+                    nuevoInventario.setStockMinimo(5);
                     return nuevoInventario;
                 });
     }
 
     private void verificarStockCritico(InventarioBodega inventario, Long negocioId) {
         if (inventario.getCantidadActual() <= inventario.getStockMinimo()) {
-
             List<String> rolesNotificacion = List.of("PROPIETARIO", "ROLE_PROPIETARIO", "BODEGUERO", "ROLE_BODEGUERO");
             List<String> destinatarios = miembroNegocioRepository.findCorreosByNegocioAndRoles(negocioId, rolesNotificacion);
 
-            System.out.println("🔍 Correos reales listos para recibir alerta: " + destinatarios);
-
             if (destinatarios.isEmpty()) {
                 destinatarios = List.of("castroelkin2020@gmail.com");
-                System.out.println("⚠️ No se encontraron propietarios, enviando a correo de soporte: " + destinatarios);
             }
 
             emailService.enviarAlertaStockMinimo(

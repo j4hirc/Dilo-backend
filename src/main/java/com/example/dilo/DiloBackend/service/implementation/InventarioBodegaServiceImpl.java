@@ -75,18 +75,21 @@ public class InventarioBodegaServiceImpl implements InventarioBodegaService {
 
             BigDecimal cantidadBD = new BigDecimal(requestDTO.getCantidadActual());
 
+            // 🔥 MAGIA AQUÍ: Generamos el número de lote secuencial por Negocio
+            long cantidadLotesActuales = loteRepository.countByNegocioId(negocioId);
+            String codigoLoteGenerado = String.format("LOTE-%05d", cantidadLotesActuales + 1);
+
             Lote loteInicial = new Lote();
             loteInicial.setNegocio(negocio);
             loteInicial.setProducto(producto);
             loteInicial.setBodega(bodega);
+            loteInicial.setNumeroLote(codigoLoteGenerado); // 🔥 SE LO ASIGNAMOS AL LOTE
             loteInicial.setCantidadInicial(cantidadBD);
             loteInicial.setCantidadDisponible(cantidadBD);
             loteInicial.setCostoUnitario(costoUnitario);
             loteInicial.setCostoTotal(costoUnitario.multiply(cantidadBD));
             loteInicial.setFechaIngreso(LocalDateTime.now());
             loteInicial.setEstado("ACTIVO");
-
-            // --- NUEVO: ASIGNACIÓN DE FECHA DE CADUCIDAD ---
             loteInicial.setFechaCaducidad(requestDTO.getFechaCaducidad());
 
             loteInicial = loteRepository.save(loteInicial);
