@@ -27,6 +27,7 @@ public class ProductoMapper {
         // --- NUEVOS CAMPOS MAPEADOS ---
         dto.setUnidadMedida(producto.getUnidadMedida());
         dto.setTieneCaducidad(producto.getTieneCaducidad());
+        dto.setCostoPromedioActual(producto.getCostoPromedioActual());
 
         return dto;
     }

@@ -19,4 +19,6 @@ public class ProductoResponseDTO {
     // --- NUEVOS CAMPOS ---
     private String unidadMedida;
     private Boolean tieneCaducidad;
+
+    private BigDecimal costoPromedioActual;
 }
