@@ -73,12 +73,21 @@ public class FacturaServiceImpl implements FacturaService {
                     .findByBodegaIdAndNegocioIdAndProductoId(dto.getBodegaId(), negocioId, producto.getId())
                     .orElseThrow(() -> new RuntimeException("El producto '" + producto.getNombre() + "' no está registrado en la bodega seleccionada."));
 
+            // Validamos stock...
             if (inventario.getCantidadActual() < dto.getCantidad()) {
                 throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() +
                         ". Disponible: " + inventario.getCantidadActual());
             }
 
-            BigDecimal precio = producto.getPrecioUnitario();
+            // 🔥 CAMBIO AQUÍ: Usamos el Costo Promedio en lugar del Precio Unitario
+            BigDecimal precio = producto.getCostoPromedioActual();
+
+            // Validación de seguridad: Si por alguna razón el producto recién se creó
+            // y su costo promedio es 0, usamos el PVP normal como respaldo para que la factura no salga en $0.00
+            if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
+                precio = producto.getPrecioUnitario();
+            }
+
             BigDecimal cantidad = new BigDecimal(dto.getCantidad());
             BigDecimal subtotalItem = precio.multiply(cantidad).setScale(2, RoundingMode.HALF_UP);
 
