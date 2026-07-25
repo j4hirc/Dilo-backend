@@ -9,6 +9,6 @@ import java.util.List;
 public interface CuentaPorCobrarService {
     void generarCuentaPorCobrar(Factura factura, int numeroCuotas);
     List<CuentaPorCobrarResponseDTO> listarPorNegocio(Long negocioId);
-    void registrarPagoCuota(Long cuotaId, BigDecimal montoPago);
+    void registrarPagoCuota(Long cuentaId, BigDecimal montoPago);
     CuentaPorCobrarResponseDTO obtenerDetalle(Long id);
 }

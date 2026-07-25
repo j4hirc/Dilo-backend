@@ -33,13 +33,13 @@ public class CuentasPorCobrarController {
     }
 
 
-    @PostMapping("/cuotas/{cuotaId}/pagar")
+    @PostMapping("/{cuentaId}/pagar")
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'EMPLEADO')")
     public ResponseEntity<String> pagarCuota(
-            @PathVariable Long cuotaId,
+            @PathVariable Long cuentaId,
             @Valid @RequestBody PagoCuotaRequestDTO request) {
 
-        cuentaPorCobrarService.registrarPagoCuota(cuotaId, request.getMontoPago());
+        cuentaPorCobrarService.registrarPagoCuota(cuentaId, request.getMontoPago());
 
         return ResponseEntity.ok("Pago registrado exitosamente");
     }

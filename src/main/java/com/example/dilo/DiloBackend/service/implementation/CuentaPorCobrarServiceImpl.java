@@ -73,6 +73,7 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CuentaPorCobrarResponseDTO> listarPorNegocio(Long negocioId) {
         return cuentaRepository.findByNegocioIdOrderByFechaVencimientoAsc(negocioId)
                 .stream()
@@ -91,18 +92,17 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
 
     @Override
     @Transactional
-    public void registrarPagoCuota(Long cuotaId, BigDecimal montoPago) {
-        // 1. Buscamos la cuota para saber a qué deuda pertenece
-        Cuota cuotaSeleccionada = cuotaRepository.findById(cuotaId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cuota no encontrada"));
+    public void registrarPagoCuota(Long cuentaId, BigDecimal montoPago) {
 
-        CuentasPorCobrar cuentaTotal = cuotaSeleccionada.getCuentaPorCobrar();
+        // 1. Buscamos directamente la DEUDA (CuentaPorCobrar), no una cuota individual
+        CuentasPorCobrar cuentaTotal = cuentaRepository.findById(cuentaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cuenta por cobrar no encontrada"));
 
         if (cuentaTotal.getEstado().equals("PAGADA")) {
             throw new RuntimeException("La deuda total de esta factura ya está completamente pagada.");
         }
 
-        // 2. Validamos que el pago no supere la deuda TOTAL (ya no la cuota individual)
+        // 2. Validamos que el pago no supere la deuda TOTAL
         if (montoPago.compareTo(cuentaTotal.getSaldoPendiente()) > 0) {
             throw new RuntimeException("El monto a abonar ($" + montoPago + ") es mayor a la deuda total restante ($" + cuentaTotal.getSaldoPendiente() + ").");
         }
@@ -122,10 +122,10 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
             BigDecimal montoADescontar;
 
             if (abonoRestante.compareTo(saldoCuota) >= 0) {
-                // El abono cubre toda esta cuota (y sobra dinero para la siguiente)
+                // El abono cubre toda esta cuota
                 montoADescontar = saldoCuota;
             } else {
-                // El abono solo cubre una parte de esta cuota
+                // El abono solo cubre una parte
                 montoADescontar = abonoRestante;
             }
 
@@ -137,14 +137,13 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
             }
         }
 
-        // 5. Descontamos el saldo de la Deuda Total (Cabecera)
+        // 4. Descontamos el saldo de la Deuda Total
         cuentaTotal.setSaldoPendiente(cuentaTotal.getSaldoPendiente().subtract(montoPago));
 
         if (cuentaTotal.getSaldoPendiente().compareTo(BigDecimal.ZERO) == 0) {
             cuentaTotal.setEstado("PAGADA");
         }
 
-        // Al guardar la cuenta total, Hibernate también actualiza todas las cuotas modificadas gracias al Cascade
         cuentaRepository.save(cuentaTotal);
     }
 }
