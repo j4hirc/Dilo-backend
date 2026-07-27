@@ -120,6 +120,22 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
     }
 
     @Override
+    public MiembroNegocioResponseDTO activarMiembro(Long negocioId, Long miembroId) {
+        MiembroNegocio miembro = miembroNegocioRepository.findById(miembroId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registro de miembro no encontrado"));
+
+        if (!miembro.getNegocio().getId().equals(negocioId)) {
+            throw new IllegalArgumentException("El miembro no pertenece al negocio especificado");
+        }
+
+        // 🔥 Lo pasamos de Inactivo a Activo nuevamente
+        miembro.setEstadoLaboral("Activo");
+
+        MiembroNegocio actualizado = miembroNegocioRepository.save(miembro);
+        return miembroNegocioMapper.toDto(actualizado);
+    }
+
+    @Override
     @Transactional
     public MiembroNegocioResponseDTO cambiarRolMiembro(Long negocioId, Long miembroId, String nombreNuevoRol) {
         MiembroNegocio miembro = miembroNegocioRepository.findById(miembroId)

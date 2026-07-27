@@ -92,4 +92,15 @@ public class MiembroNegocioController {
         MiembroNegocioResponseDTO response = miembroNegocioService.desactivarMiembro(negocioId, miembroId);
         return ResponseEntity.ok(response);
     }
+
+
+    @PutMapping("/{miembroId}/activar")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO')")
+    public ResponseEntity<MiembroNegocioResponseDTO> activarMiembro(
+            @PathVariable Long negocioId,
+            @PathVariable Long miembroId) {
+
+        MiembroNegocioResponseDTO response = miembroNegocioService.activarMiembro(negocioId, miembroId);
+        return ResponseEntity.ok(response);
+    }
 }
