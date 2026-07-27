@@ -1,5 +1,6 @@
 package com.example.dilo.DiloBackend.service;
 
+import com.example.dilo.DiloBackend.dto.request.ChangePasswordRequestDTO;
 import com.example.dilo.DiloBackend.dto.request.UpdateUsuarioDTO;
 import com.example.dilo.DiloBackend.dto.response.UsuarioResponseDTO;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,5 +16,7 @@ public interface UsuarioService {
     UsuarioResponseDTO actualizarMiPerfil(String email, UpdateUsuarioDTO dto, MultipartFile foto);
 
     List<UsuarioResponseDTO> obtenerUsuariosPorNegocio(Long negocioId);
+
+    void cambiarPassword(String email, ChangePasswordRequestDTO passwordDTO);
 
 }

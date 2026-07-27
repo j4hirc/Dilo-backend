@@ -1,5 +1,6 @@
 package com.example.dilo.DiloBackend.controller;
 
+import com.example.dilo.DiloBackend.dto.request.ChangePasswordRequestDTO;
 import com.example.dilo.DiloBackend.dto.request.UpdateUsuarioDTO;
 import com.example.dilo.DiloBackend.dto.response.UsuarioResponseDTO;
 import com.example.dilo.DiloBackend.model.MiembroNegocio;
@@ -78,4 +79,21 @@ public class UsuarioController {
         List<UsuarioResponseDTO> response = usuarioService.obtenerUsuariosPorNegocio(negocioId);
         return ResponseEntity.ok(response);
     }
+
+
+
+    @PutMapping("/me/password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> cambiarMiPassword(
+            Authentication authentication,
+            @RequestBody ChangePasswordRequestDTO passwordDTO) {
+
+        String emailLogueado = authentication.getName();
+
+        usuarioService.cambiarPassword(emailLogueado, passwordDTO);
+
+        return ResponseEntity.ok(Map.of("mensaje", "Contraseña actualizada exitosamente"));
+    }
+
+
 }

@@ -1,5 +1,6 @@
 package com.example.dilo.DiloBackend.service.implementation;
 
+import com.example.dilo.DiloBackend.dto.request.ChangePasswordRequestDTO;
 import com.example.dilo.DiloBackend.dto.request.UpdateUsuarioDTO;
 import com.example.dilo.DiloBackend.dto.response.UsuarioResponseDTO;
 import com.example.dilo.DiloBackend.exception.ResourceNotFoundException;
@@ -10,6 +11,7 @@ import com.example.dilo.DiloBackend.repository.UsuarioRepository;
 import com.example.dilo.DiloBackend.service.UsuarioService;
 import com.example.dilo.DiloBackend.service.mapper.UsuarioMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +27,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioMapper usuarioMapper;
     private final ParroquiaRepository parroquiaRepository; // 🔥 Para actualizar la parroquia
     private final SupabaseStorageService storageService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UsuarioResponseDTO obtenerMiPerfil(String email) {
@@ -46,6 +49,31 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .map(usuarioMapper::toDto)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void cambiarPassword(String email, ChangePasswordRequestDTO dto) {
+        // 1. Buscar al usuario
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        // 2. Validar que la contraseña actual proporcionada sea correcta
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), usuario.getPassword())) {
+            throw new IllegalArgumentException("La contraseña actual es incorrecta");
+            // O usa una excepción personalizada como BadRequestException
+        }
+
+        // 3. Validar que la nueva contraseña y la confirmación coincidan
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new IllegalArgumentException("Las contraseñas nuevas no coinciden");
+        }
+
+        // (Opcional) Validar la fortaleza de la contraseña aquí (longitud, mayúsculas, etc.)
+
+        // 4. Encriptar y guardar la nueva contraseña
+        usuario.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        usuarioRepository.save(usuario);
+    }
+
 
     // 🔥 NUEVO: ACTUALIZAR MI PERFIL (Con foto)
     @Override
