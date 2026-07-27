@@ -40,14 +40,22 @@ public class LoginServiceImpl implements LoginService {
         Usuario usuario = usuarioRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Buscar los negocios a los que pertenece el usuario
-        List<MiembroNegocio> miembros = miembroNegocioRepository.findByUsuarioId(usuario.getId());
-        List<NegocioResponseDTO> negocios = miembros.stream()
-                .map(m -> negocioMapper.toDto(m.getNegocio()))
-                .distinct() // En caso de que tenga multiples roles en el mismo negocio, evitamos duplicar el negocio
+        // 1. Buscar TODOS los negocios a los que pertenece el usuario en el historial
+        List<MiembroNegocio> historialMiembros = miembroNegocioRepository.findByUsuarioId(usuario.getId());
+
+        // 🔥 2. FILTRO CLAVE: Ignoramos los negocios donde fue desactivado (INACTIVO) o rechazado
+        List<MiembroNegocio> miembrosActivos = historialMiembros.stream()
+                .filter(m -> !"INACTIVO".equalsIgnoreCase(m.getEstadoLaboral()) && !"RECHAZADO".equalsIgnoreCase(m.getEstadoInvitacion()))
                 .collect(Collectors.toList());
-                
-        List<String> roles = miembros.stream()
+
+        // 3. Extraemos los negocios válidos
+        List<NegocioResponseDTO> negocios = miembrosActivos.stream()
+                .map(m -> negocioMapper.toDto(m.getNegocio()))
+                .distinct() // En caso de que tenga multiples roles en el mismo negocio, evitamos duplicar
+                .collect(Collectors.toList());
+
+        // 4. Extraemos los roles válidos
+        List<String> roles = miembrosActivos.stream()
                 .map(m -> m.getRol().getNombre())
                 .distinct()
                 .collect(Collectors.toList());
@@ -56,18 +64,18 @@ public class LoginServiceImpl implements LoginService {
                 .anyMatch(rol -> rol.getNombre().equals("SUPER_ADMIN"));
 
         AuthResponseDTO response = new AuthResponseDTO();
-        response.setToken(jwtGenerator.generateToken(authentication, 
+        response.setToken(jwtGenerator.generateToken(authentication,
                 (negocios.size() == 1) ? negocios.get(0).getIdNegocio() : null));
         response.setIdUsuario(usuario.getId());
         response.setEmail(usuario.getEmail());
         response.setNombreCompleto(usuario.getPrimerNombre() + " " + usuario.getApellidoPaterno());
         response.setFotoPerfil(usuario.getFotoPerfil());
         response.setSuperAdmin(esSuperAdmin);
-        
+
         response.setBusinesses(negocios);
         response.setSelectedBusinessId(negocios.size() == 1 ? negocios.get(0).getIdNegocio() : null);
-        response.setNeedsBusinessSelection(negocios.size() != 1);
-        
+        response.setNeedsBusinessSelection(negocios.size() > 1); // Solo necesita seleccionar si tiene más de 1
+
         response.setRoles(roles);
         if (roles.size() == 1) {
             response.setRol(roles.get(0));
