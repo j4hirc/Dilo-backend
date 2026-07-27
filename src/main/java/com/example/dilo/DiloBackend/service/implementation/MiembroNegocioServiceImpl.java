@@ -1,6 +1,5 @@
 package com.example.dilo.DiloBackend.service.implementation;
 
-
 import com.example.dilo.DiloBackend.dto.request.MiembroNegocioRequestDTO;
 import com.example.dilo.DiloBackend.dto.request.UnirseNegocioRequestDTO;
 import com.example.dilo.DiloBackend.dto.response.MiembroNegocioResponseDTO;
@@ -56,7 +55,8 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
 
         boolean yaExiste = miembroNegocioRepository.existsByUsuarioIdAndNegocioId(usuario.getId(), negocio.getId());
         if (yaExiste) {
-            throw new RuntimeException("El usuario ya tiene una invitación o ya pertenece a este negocio.");
+            // 🔥 CAMBIADO A IllegalArgumentException
+            throw new IllegalArgumentException("El usuario ya tiene una invitación o ya pertenece a este negocio.");
         }
 
         MiembroNegocio nuevoMiembro = miembroNegocioMapper.toEntity(requestDTO, usuario, negocio, rol);
@@ -76,18 +76,17 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Invitación no encontrada"));
 
         if (!miembro.getNegocio().getId().equals(negocioId)) {
-            throw new RuntimeException("La invitación no corresponde a este negocio");
+            throw new IllegalArgumentException("La invitación no corresponde a este negocio");
         }
 
         if (!miembro.getEstadoInvitacion().equals("PENDIENTE")) {
-            throw new RuntimeException("Esta invitación ya fue procesada anteriormente");
+            throw new IllegalArgumentException("Esta invitación ya fue procesada anteriormente");
         }
 
         if (aceptar) {
             miembro.setEstadoInvitacion("ACEPTADO");
             miembro.setEstadoLaboral("Activo");
             miembro.setFechaVinculacion(LocalDateTime.now());
-
 
             Usuario usuario = miembro.getUsuario();
             Role rol = miembro.getRol();
@@ -105,18 +104,15 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
         return miembroNegocioMapper.toDto(actualizado);
     }
 
-
-
     @Override
     public MiembroNegocioResponseDTO desactivarMiembro(Long negocioId, Long miembroId) {
         MiembroNegocio miembro = miembroNegocioRepository.findById(miembroId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro de miembro no encontrado"));
 
         if (!miembro.getNegocio().getId().equals(negocioId)) {
-            throw new RuntimeException("El miembro no pertenece al negocio especificado");
+            throw new IllegalArgumentException("El miembro no pertenece al negocio especificado");
         }
 
-        // En lugar de borrarlo, lo pasamos a Inactivo
         miembro.setEstadoLaboral("Inactivo");
 
         MiembroNegocio actualizado = miembroNegocioRepository.save(miembro);
@@ -126,30 +122,24 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
     @Override
     @Transactional
     public MiembroNegocioResponseDTO cambiarRolMiembro(Long negocioId, Long miembroId, String nombreNuevoRol) {
-        // 1. Buscamos al miembro
         MiembroNegocio miembro = miembroNegocioRepository.findById(miembroId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro de miembro no encontrado"));
 
-        // 2. Verificamos que sí pertenezca al negocio desde el que se hace la petición
         if (!miembro.getNegocio().getId().equals(negocioId)) {
-            throw new RuntimeException("El miembro no pertenece al negocio especificado");
+            throw new IllegalArgumentException("El miembro no pertenece al negocio especificado");
         }
 
-        // 3. Buscamos el nuevo rol en la base de datos por su nombre
         Role nuevoRol = roleRepository.findByNombre(nombreNuevoRol)
                 .orElseThrow(() -> new ResourceNotFoundException("El rol " + nombreNuevoRol + " no existe en la base de datos"));
 
-        // 4. Se lo asignamos al registro del negocio
         miembro.setRol(nuevoRol);
 
-        // 5. Como tu sistema permite varios roles por usuario, se lo sumamos a su perfil global si no lo tiene
         Usuario usuario = miembro.getUsuario();
         if (!usuario.getRoles().contains(nuevoRol)) {
             usuario.getRoles().add(nuevoRol);
-            usuarioRepository.save(usuario); // Guardamos al usuario con su nuevo rol sumado
+            usuarioRepository.save(usuario);
         }
 
-        // 6. Guardamos los cambios en el negocio y retornamos
         MiembroNegocio actualizado = miembroNegocioRepository.save(miembro);
         return miembroNegocioMapper.toDto(actualizado);
     }
@@ -163,24 +153,22 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
         Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado en el sistema"));
 
-        // 1. Buscamos todas las membresías del usuario
         List<MiembroNegocio> membresiasUsuario = miembroNegocioRepository.findByUsuarioId(usuario.getId());
 
-        // 2. Filtramos para ver si ya tiene historial en ESTE negocio específico
         MiembroNegocio relacionExistente = membresiasUsuario.stream()
                 .filter(m -> m.getNegocio().getId().equals(negocio.getId()))
                 .findFirst()
                 .orElse(null);
 
-        // 3. Validaciones estrictas de estado
+        // 🔥 AHORA USAMOS IllegalArgumentException QUE YA ESTÁ MAPEADA EN TU GLOBAL HANDLER
         if (relacionExistente != null) {
             if ("INACTIVO".equalsIgnoreCase(relacionExistente.getEstadoLaboral())) {
-                throw new RuntimeException("Tu acceso a este negocio fue revocado. No puedes volver a enviar una solicitud.");
+                throw new IllegalArgumentException("Tu acceso a este negocio fue revocado. No puedes volver a enviar una solicitud.");
             }
             if ("RECHAZADO".equalsIgnoreCase(relacionExistente.getEstadoInvitacion())) {
-                throw new RuntimeException("Tu solicitud anterior para este negocio fue rechazada por el administrador.");
+                throw new IllegalArgumentException("Tu solicitud anterior para este negocio fue rechazada por el administrador.");
             }
-            throw new RuntimeException("Ya perteneces a este negocio o tienes una solicitud en proceso.");
+            throw new IllegalArgumentException("Ya perteneces a este negocio o tienes una solicitud en proceso.");
         }
 
         Role rol = roleRepository.findById(requestDTO.getIdRol())
