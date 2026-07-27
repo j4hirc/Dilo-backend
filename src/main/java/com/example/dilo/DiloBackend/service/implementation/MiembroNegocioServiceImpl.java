@@ -163,14 +163,28 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
         Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado en el sistema"));
 
-        boolean yaExiste = miembroNegocioRepository.existsByUsuarioIdAndNegocioId(usuario.getId(), negocio.getId());
-        if (yaExiste) {
-            throw new RuntimeException("Ya tienes una solicitud pendiente o ya perteneces a este negocio.");
+        // 1. Buscamos todas las membresías del usuario
+        List<MiembroNegocio> membresiasUsuario = miembroNegocioRepository.findByUsuarioId(usuario.getId());
+
+        // 2. Filtramos para ver si ya tiene historial en ESTE negocio específico
+        MiembroNegocio relacionExistente = membresiasUsuario.stream()
+                .filter(m -> m.getNegocio().getId().equals(negocio.getId()))
+                .findFirst()
+                .orElse(null);
+
+        // 3. Validaciones estrictas de estado
+        if (relacionExistente != null) {
+            if ("INACTIVO".equalsIgnoreCase(relacionExistente.getEstadoLaboral())) {
+                throw new RuntimeException("Tu acceso a este negocio fue revocado. No puedes volver a enviar una solicitud.");
+            }
+            if ("RECHAZADO".equalsIgnoreCase(relacionExistente.getEstadoInvitacion())) {
+                throw new RuntimeException("Tu solicitud anterior para este negocio fue rechazada por el administrador.");
+            }
+            throw new RuntimeException("Ya perteneces a este negocio o tienes una solicitud en proceso.");
         }
 
         Role rol = roleRepository.findById(requestDTO.getIdRol())
                 .orElseThrow(() -> new ResourceNotFoundException("El rol especificado no existe"));
-
 
         MiembroNegocio nuevoMiembro = new MiembroNegocio();
         nuevoMiembro.setUsuario(usuario);
