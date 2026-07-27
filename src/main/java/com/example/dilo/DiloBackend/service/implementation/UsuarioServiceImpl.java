@@ -56,20 +56,16 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        // 2. Validar que la contraseña actual proporcionada sea correcta
-        if (!passwordEncoder.matches(dto.getCurrentPassword(), usuario.getPassword())) {
-            throw new IllegalArgumentException("La contraseña actual es incorrecta");
-            // O usa una excepción personalizada como BadRequestException
-        }
+        // 🔥 Se eliminó la validación de la contraseña actual
 
-        // 3. Validar que la nueva contraseña y la confirmación coincidan
+        // 2. Validar que la nueva contraseña y la confirmación coincidan
         if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
             throw new IllegalArgumentException("Las contraseñas nuevas no coinciden");
         }
 
         // (Opcional) Validar la fortaleza de la contraseña aquí (longitud, mayúsculas, etc.)
 
-        // 4. Encriptar y guardar la nueva contraseña
+        // 3. Encriptar y guardar la nueva contraseña
         usuario.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         usuarioRepository.save(usuario);
     }
