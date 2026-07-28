@@ -50,11 +50,11 @@ public class SriServiceImpl implements SriService {
 
             List<DetalleFactura> detalles = detalleFacturaRepository.findByFacturaId(factura.getId());
 
-            // Generamos el XML (Ya no lo firmamos, va directo)
+            // Generamos el XML
             String xmlSinFirma = generarXMLFactura(factura, detalles, claveAcceso);
             byte[] xmlBytes = xmlSinFirma.getBytes(StandardCharsets.UTF_8);
 
-            // 3. ENVIAR AL SRI SIMULADO
+            // ENVIAR AL SRI SIMULADO
             System.out.println("📤 Enviando comprobante simulado al SRI...");
             boolean recibido = sriSoapClient.enviarRecepcion(xmlBytes);
 
@@ -66,7 +66,7 @@ public class SriServiceImpl implements SriService {
             }
 
             try {
-                Thread.sleep(2000); // Reduje el tiempo a 2 seg para que sea más veloz
+                Thread.sleep(2000);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -93,20 +93,27 @@ public class SriServiceImpl implements SriService {
 
             byte[] pdfBytes = facturaPdfService.generarPdfFactura(factura, detalles);
 
+            // 🔥 CORRECCIÓN: Validamos que exista el cliente y tenga email para no tirar NullPointerException
             if (pdfBytes != null && pdfBytes.length > 0) {
-                emailService.enviarFacturaSri(
-                        factura.getCliente().getEmail(),
-                        factura.getCliente().getPrimerNombre(),
-                        factura.getNumeroFactura(),
-                        pdfBytes,
-                        xmlBytes
-                );
+                if (factura.getCliente() != null && factura.getCliente().getEmail() != null && !factura.getCliente().getEmail().isEmpty()) {
+                    emailService.enviarFacturaSri(
+                            factura.getCliente().getEmail(),
+                            factura.getCliente().getPrimerNombre(),
+                            factura.getNumeroFactura(),
+                            pdfBytes,
+                            xmlBytes
+                    );
+                    System.out.println("📧 Correo enviado exitosamente al cliente.");
+                } else {
+                    System.out.println("⚠️ Es Consumidor Final o no tiene correo registrado. Se omite envío de email.");
+                }
             }
 
-            System.out.println("✅ Flujo documental completado y correo enviado exitosamente.");
+            System.out.println("✅ Flujo documental completado.");
 
         } catch (Exception e) {
             System.err.println("❌ Error procesando factura en el SRI: " + e.getMessage());
+            e.printStackTrace(); // Para ver exactamente la línea si vuelve a fallar
             if (factura != null) {
                 factura.setEstadoSri("ERROR_SRI");
                 facturaRepository.save(factura);
@@ -159,12 +166,12 @@ public class SriServiceImpl implements SriService {
         xml.append("<factura id=\"comprobante\" version=\"1.1.0\">\n");
 
         xml.append("  <infoTributaria>\n");
-        xml.append("    <ambiente>1</ambiente>\n"); // 1 Pruebas, 2 Producción
-        xml.append("    <tipoEmision>1</tipoEmision>\n"); // Emisión Normal
+        xml.append("    <ambiente>1</ambiente>\n");
+        xml.append("    <tipoEmision>1</tipoEmision>\n");
         xml.append("    <razonSocial>").append(negocio.getRazonSocial()).append("</razonSocial>\n");
         xml.append("    <ruc>").append(negocio.getRuc()).append("</ruc>\n");
         xml.append("    <claveAcceso>").append(claveAcceso).append("</claveAcceso>\n");
-        xml.append("    <codDoc>01</codDoc>\n"); // 01 Factura
+        xml.append("    <codDoc>01</codDoc>\n");
         xml.append("    <estab>001</estab>\n");
         xml.append("    <ptoEmi>001</ptoEmi>\n");
         xml.append("    <secuencial>").append(String.format("%09d", factura.getId())).append("</secuencial>\n");
@@ -176,12 +183,26 @@ public class SriServiceImpl implements SriService {
         xml.append("    <dirEstablecimiento>").append(negocio.getDireccion()).append("</dirEstablecimiento>\n");
         xml.append("    <obligadoContabilidad>NO</obligadoContabilidad>\n");
 
-        String tipoIdComprador = factura.getCliente().getDni().length() == 13 ? "04" : "05";
-        if(factura.getCliente().getDni().equals("9999999999999")) tipoIdComprador = "07";
+        // 🔥 CORRECCIÓN: Manejo de Consumidor Final a prueba de balas para el XML
+        String tipoIdComprador = "07";
+        String razonSocialComprador = "CONSUMIDOR FINAL";
+        String identificacionComprador = "9999999999999";
+
+        if (factura.getCliente() != null) {
+            String dni = factura.getCliente().getDni();
+            if (dni != null && !dni.trim().isEmpty() && !dni.equals("9999999999999")) {
+                identificacionComprador = dni;
+                tipoIdComprador = dni.length() == 13 ? "04" : "05"; // 04 RUC, 05 Cédula
+            }
+            String nombre = factura.getCliente().getPrimerNombre() != null ? factura.getCliente().getPrimerNombre() : "";
+            String apellido = factura.getCliente().getApellidoPaterno() != null ? factura.getCliente().getApellidoPaterno() : "";
+            razonSocialComprador = (nombre + " " + apellido).trim();
+            if(razonSocialComprador.isEmpty()) razonSocialComprador = "CONSUMIDOR FINAL";
+        }
 
         xml.append("    <tipoIdentificacionComprador>").append(tipoIdComprador).append("</tipoIdentificacionComprador>\n");
-        xml.append("    <razonSocialComprador>").append(factura.getCliente().getPrimerNombre()).append(" ").append(factura.getCliente().getApellidoPaterno()).append("</razonSocialComprador>\n");
-        xml.append("    <identificacionComprador>").append(factura.getCliente().getDni()).append("</identificacionComprador>\n");
+        xml.append("    <razonSocialComprador>").append(razonSocialComprador).append("</razonSocialComprador>\n");
+        xml.append("    <identificacionComprador>").append(identificacionComprador).append("</identificacionComprador>\n");
 
         BigDecimal totalSinImpuestos = factura.getSubtotalIva0().add(factura.getSubtotalIvaAplicado());
         xml.append("    <totalSinImpuestos>").append(totalSinImpuestos).append("</totalSinImpuestos>\n");
@@ -190,8 +211,8 @@ public class SriServiceImpl implements SriService {
         xml.append("    <totalConImpuestos>\n");
         if (factura.getSubtotalIvaAplicado().compareTo(BigDecimal.ZERO) > 0) {
             xml.append("      <totalImpuesto>\n");
-            xml.append("        <codigo>2</codigo>\n"); // 2 es IVA
-            xml.append("        <codigoPorcentaje>4</codigoPorcentaje>\n"); // 4 es 15% (Según tabla actual SRI)
+            xml.append("        <codigo>2</codigo>\n");
+            xml.append("        <codigoPorcentaje>4</codigoPorcentaje>\n");
             xml.append("        <baseImponible>").append(factura.getSubtotalIvaAplicado()).append("</baseImponible>\n");
             xml.append("        <valor>").append(factura.getTotalIva()).append("</valor>\n");
             xml.append("      </totalImpuesto>\n");
