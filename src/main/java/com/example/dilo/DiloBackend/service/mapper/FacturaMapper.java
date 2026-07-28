@@ -17,7 +17,13 @@ public class FacturaMapper {
         dto.setId(factura.getId());
         dto.setNumeroFactura(factura.getNumeroFactura());
         dto.setFechaEmision(factura.getFechaEmision());
-        dto.setClienteNombre(factura.getCliente().getPrimerNombre() + " " + factura.getCliente().getApellidoPaterno());
+        if (factura.getCliente() != null) {
+            String nombre = factura.getCliente().getPrimerNombre() != null ? factura.getCliente().getPrimerNombre() : "";
+            String apellido = factura.getCliente().getApellidoPaterno() != null ? factura.getCliente().getApellidoPaterno() : "";
+            dto.setClienteNombre((nombre + " " + apellido).trim());
+        } else {
+            dto.setClienteNombre("Consumidor Final");
+        }
         dto.setClienteIdentificacion(factura.getCliente().getDni());
         dto.setSubtotalIva0(factura.getSubtotalIva0());
         dto.setSubtotalIvaAplicado(factura.getSubtotalIvaAplicado());
