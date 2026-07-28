@@ -51,8 +51,12 @@ public class FacturaServiceImpl implements FacturaService {
         Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario emisor no encontrado"));
 
-        Cliente cliente = clienteRepository.findById(request.getClienteId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
+        // 🔥 CORRECCIÓN: Si trae ID, buscamos al cliente. Si viene null, lo dejamos como null (Consumidor Final)
+        Cliente cliente = null;
+        if (request.getClienteId() != null) {
+            cliente = clienteRepository.findById(request.getClienteId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
+        }
 
         ParametroGlobal ivaParam = parametroGlobalRepository.findById("IVA_ACTUAL")
                 .orElseThrow(() -> new RuntimeException("Error Crítico: El parámetro IVA_ACTUAL no está configurado en el sistema. Contacte al administrador."));
@@ -73,17 +77,13 @@ public class FacturaServiceImpl implements FacturaService {
                     .findByBodegaIdAndNegocioIdAndProductoId(dto.getBodegaId(), negocioId, producto.getId())
                     .orElseThrow(() -> new RuntimeException("El producto '" + producto.getNombre() + "' no está registrado en la bodega seleccionada."));
 
-            // Validamos stock...
             if (inventario.getCantidadActual() < dto.getCantidad()) {
                 throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() +
                         ". Disponible: " + inventario.getCantidadActual());
             }
 
-            // 🔥 CAMBIO AQUÍ: Usamos el Costo Promedio en lugar del Precio Unitario
             BigDecimal precio = producto.getCostoPromedioActual();
 
-            // Validación de seguridad: Si por alguna razón el producto recién se creó
-            // y su costo promedio es 0, usamos el PVP normal como respaldo para que la factura no salga en $0.00
             if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
                 precio = producto.getPrecioUnitario();
             }
@@ -117,6 +117,7 @@ public class FacturaServiceImpl implements FacturaService {
 
         Factura factura = new Factura();
         factura.setNegocio(negocio);
+        // Aquí pasará el cliente si existe, o pasará "null" si es Consumidor Final
         factura.setCliente(cliente);
         factura.setUsuarioEmisor(usuario);
         factura.setNumeroFactura("TEMP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -136,11 +137,9 @@ public class FacturaServiceImpl implements FacturaService {
 
         Factura facturaGuardada = facturaRepository.save(factura);
 
-        // --- INICIO DEL CAMBIO CLAVE ---
         for (DetalleFactura detalle : detallesParaGuardar) {
             detalle.setFactura(facturaGuardada);
 
-            // 1. Configuramos el request para el kardex
             TransaccionInventarioRequestDTO egresoVenta = new TransaccionInventarioRequestDTO();
             egresoVenta.setTipo("EGRESO");
             egresoVenta.setProductoId(detalle.getProducto().getId());
@@ -148,14 +147,11 @@ public class FacturaServiceImpl implements FacturaService {
             egresoVenta.setCantidad(detalle.getCantidad());
             egresoVenta.setMotivo("Venta según Factura #" + facturaGuardada.getNumeroFactura());
 
-            // 2. Procesamos el egreso y capturamos el costo que calculó el algoritmo (FIFO/LIFO/Promedio)
             TransaccionInventarioResponseDTO respuestaTx = transaccionService.registrarTransaccion(negocioId, emailUsuario, egresoVenta);
 
-            // 3. Guardamos los costos reales en la entidad
             detalle.setCostoUnitarioReal(respuestaTx.getCostoUnitario());
             detalle.setCostoTotalReal(respuestaTx.getCostoTotal());
 
-            // 4. AHORA SÍ guardamos el detalle en la base de datos
             detalleFacturaRepository.save(detalle);
         }
 

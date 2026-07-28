@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 public class FacturaRequestDTO {
 
-    @NotNull(message = "El ID del cliente es obligatorio")
+
     private Long clienteId;
 
     @NotNull(message = "El método de pago es obligatorio")
