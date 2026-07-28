@@ -21,10 +21,11 @@ public class FacturaMapper {
             String nombre = factura.getCliente().getPrimerNombre() != null ? factura.getCliente().getPrimerNombre() : "";
             String apellido = factura.getCliente().getApellidoPaterno() != null ? factura.getCliente().getApellidoPaterno() : "";
             dto.setClienteNombre((nombre + " " + apellido).trim());
+            dto.setClienteIdentificacion(factura.getCliente().getDni()); // DNI real
         } else {
             dto.setClienteNombre("Consumidor Final");
+            dto.setClienteIdentificacion("9999999999999"); // DNI por defecto
         }
-        dto.setClienteIdentificacion(factura.getCliente().getDni());
         dto.setSubtotalIva0(factura.getSubtotalIva0());
         dto.setSubtotalIvaAplicado(factura.getSubtotalIvaAplicado());
         dto.setTotalIva(factura.getTotalIva());
