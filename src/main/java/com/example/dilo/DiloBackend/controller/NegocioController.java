@@ -35,14 +35,14 @@ public class NegocioController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'EMPLEADO')")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR')")
     public ResponseEntity<NegocioResponseDTO> getNegocioById(@PathVariable Long id) {
         NegocioResponseDTO response = negocioService.findById(id);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'EMPLEADO')")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR')")
     public ResponseEntity<List<NegocioResponseDTO>> searchNegocios(@RequestParam("term") String term) {
         List<NegocioResponseDTO> response = negocioService.findByTerm(term);
         return ResponseEntity.ok(response);
