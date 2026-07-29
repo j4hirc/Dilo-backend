@@ -19,14 +19,14 @@ public class CuentasPorCobrarController {
     private final CuentaPorCobrarService cuentaPorCobrarService;
 
     @GetMapping("/negocio/{negocioId}")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'EMPLEADO')")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR')")
     public ResponseEntity<List<CuentaPorCobrarResponseDTO>> getCuentasPorNegocio(@PathVariable Long negocioId) {
         List<CuentaPorCobrarResponseDTO> response = cuentaPorCobrarService.listarPorNegocio(negocioId);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'EMPLEADO')")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR')")
     public ResponseEntity<CuentaPorCobrarResponseDTO> getDetalleCuenta(@PathVariable Long id) {
         CuentaPorCobrarResponseDTO response = cuentaPorCobrarService.obtenerDetalle(id);
         return ResponseEntity.ok(response);
@@ -34,7 +34,7 @@ public class CuentasPorCobrarController {
 
 
     @PostMapping("/{cuentaId}/pagar")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'EMPLEADO')")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR')")
     public ResponseEntity<String> pagarCuota(
             @PathVariable Long cuentaId,
             @Valid @RequestBody PagoCuotaRequestDTO request) {
