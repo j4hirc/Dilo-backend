@@ -55,7 +55,6 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
 
         boolean yaExiste = miembroNegocioRepository.existsByUsuarioIdAndNegocioId(usuario.getId(), negocio.getId());
         if (yaExiste) {
-            // 🔥 CAMBIADO A IllegalArgumentException
             throw new IllegalArgumentException("El usuario ya tiene una invitación o ya pertenece a este negocio.");
         }
 
@@ -96,15 +95,18 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
                 usuarioRepository.save(usuario);
             }
 
-        } else {
-            miembro.setEstadoInvitacion("RECHAZADO");
-        }
+            MiembroNegocio actualizado = miembroNegocioRepository.save(miembro);
+            return miembroNegocioMapper.toDto(actualizado);
 
-        MiembroNegocio actualizado = miembroNegocioRepository.save(miembro);
-        return miembroNegocioMapper.toDto(actualizado);
+        } else {
+            // 🔥 SOLUCIÓN: Si rechaza, borramos físicamente el registro.
+            miembroNegocioRepository.delete(miembro);
+            return null;
+        }
     }
 
     @Override
+    @Transactional
     public MiembroNegocioResponseDTO desactivarMiembro(Long negocioId, Long miembroId) {
         MiembroNegocio miembro = miembroNegocioRepository.findById(miembroId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registro de miembro no encontrado"));
@@ -113,10 +115,10 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
             throw new IllegalArgumentException("El miembro no pertenece al negocio especificado");
         }
 
-        miembro.setEstadoLaboral("Inactivo");
+        // 🔥 SOLUCIÓN: En lugar de pasarlo a inactivo, lo eliminamos físicamente del negocio.
+        miembroNegocioRepository.delete(miembro);
 
-        MiembroNegocio actualizado = miembroNegocioRepository.save(miembro);
-        return miembroNegocioMapper.toDto(actualizado);
+        return null;
     }
 
     @Override
@@ -128,7 +130,6 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
             throw new IllegalArgumentException("El miembro no pertenece al negocio especificado");
         }
 
-        // 🔥 Lo pasamos de Inactivo a Activo nuevamente
         miembro.setEstadoLaboral("Activo");
 
         MiembroNegocio actualizado = miembroNegocioRepository.save(miembro);
@@ -176,14 +177,9 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
                 .findFirst()
                 .orElse(null);
 
-        // 🔥 AHORA USAMOS IllegalArgumentException QUE YA ESTÁ MAPEADA EN TU GLOBAL HANDLER
+        // 🔥 CÓDIGO LIMPIO: Como los rechazados y desactivados se borran,
+        // si la relación existe es porque está adentro o en PENDIENTE.
         if (relacionExistente != null) {
-            if ("INACTIVO".equalsIgnoreCase(relacionExistente.getEstadoLaboral())) {
-                throw new IllegalArgumentException("Tu acceso a este negocio fue revocado. No puedes volver a enviar una solicitud.");
-            }
-            if ("RECHAZADO".equalsIgnoreCase(relacionExistente.getEstadoInvitacion())) {
-                throw new IllegalArgumentException("Tu solicitud anterior para este negocio fue rechazada por el administrador.");
-            }
             throw new IllegalArgumentException("Ya perteneces a este negocio o tienes una solicitud en proceso.");
         }
 
@@ -195,7 +191,7 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
         nuevoMiembro.setNegocio(negocio);
         nuevoMiembro.setRol(rol);
 
-        nuevoMiembro.setEstadoLaboral("Inactivo");
+        nuevoMiembro.setEstadoLaboral("Inactivo"); // Nace inactivo hasta que lo aprueben
         nuevoMiembro.setEstadoInvitacion("PENDIENTE");
         nuevoMiembro.setFechaVinculacion(null);
 
