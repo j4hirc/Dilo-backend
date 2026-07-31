@@ -35,4 +35,6 @@ public class RegisterUserDTO {
     private String direccion;
 
     private Long id_parroquia;
+
+    private Boolean esAdmin;
 }
