@@ -2,6 +2,7 @@
 
     import com.example.dilo.DiloBackend.dto.request.ChangePasswordRequestDTO;
     import com.example.dilo.DiloBackend.dto.request.UpdateUsuarioDTO;
+    import com.example.dilo.DiloBackend.dto.request.UserAdminUpdateDTO;
     import com.example.dilo.DiloBackend.dto.response.UsuarioResponseDTO;
     import com.example.dilo.DiloBackend.model.MiembroNegocio;
     import com.example.dilo.DiloBackend.model.Usuario;
@@ -77,6 +78,16 @@
         @PreAuthorize("isAuthenticated()")
         public ResponseEntity<List<UsuarioResponseDTO>> obtenerPorNegocio(@PathVariable Long negocioId) {
             List<UsuarioResponseDTO> response = usuarioService.obtenerUsuariosPorNegocio(negocioId);
+            return ResponseEntity.ok(response);
+        }
+
+        @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        public ResponseEntity<UsuarioResponseDTO> actualizarUsuarioPorAdmin(
+                @PathVariable Long id,
+                @RequestPart("datos") UserAdminUpdateDTO datos,
+                @RequestPart(value = "foto", required = false) MultipartFile foto) {
+
+            UsuarioResponseDTO response = usuarioService.actualizarUsuarioAdmin(id, datos, foto);
             return ResponseEntity.ok(response);
         }
 
