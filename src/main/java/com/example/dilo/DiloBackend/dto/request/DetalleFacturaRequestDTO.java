@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class DetalleFacturaRequestDTO {
 
@@ -16,5 +18,8 @@ public class DetalleFacturaRequestDTO {
     @NotNull(message = "La cantidad es obligatoria")
     @Min(value = 1, message = "La cantidad debe ser al menos 1")
     private Integer cantidad;
+
+    @Min(value = 0, message = "El descuento no puede ser negativo")
+    private BigDecimal descuento;
 
 }

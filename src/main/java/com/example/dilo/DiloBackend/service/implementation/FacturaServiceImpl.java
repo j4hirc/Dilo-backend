@@ -137,22 +137,54 @@ public class FacturaServiceImpl implements FacturaService {
 
         Factura facturaGuardada = facturaRepository.save(factura);
 
-        for (DetalleFactura detalle : detallesParaGuardar) {
-            detalle.setFactura(facturaGuardada);
+        for (DetalleFacturaRequestDTO dto : request.getDetalles()) {
+            Producto producto = productoRepository.findById(dto.getProductoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + dto.getProductoId()));
 
-            TransaccionInventarioRequestDTO egresoVenta = new TransaccionInventarioRequestDTO();
-            egresoVenta.setTipo("EGRESO");
-            egresoVenta.setProductoId(detalle.getProducto().getId());
-            egresoVenta.setBodegaOrigenId(detalle.getBodega().getId());
-            egresoVenta.setCantidad(detalle.getCantidad());
-            egresoVenta.setMotivo("Venta según Factura #" + facturaGuardada.getNumeroFactura());
+            InventarioBodega inventario = inventarioRepository
+                    .findByBodegaIdAndNegocioIdAndProductoId(dto.getBodegaId(), negocioId, producto.getId())
+                    .orElseThrow(() -> new RuntimeException("El producto '" + producto.getNombre() + "' no está registrado en la bodega seleccionada."));
 
-            TransaccionInventarioResponseDTO respuestaTx = transaccionService.registrarTransaccion(negocioId, emailUsuario, egresoVenta);
+            if (inventario.getCantidadActual() < dto.getCantidad()) {
+                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() +
+                        ". Disponible: " + inventario.getCantidadActual());
+            }
 
-            detalle.setCostoUnitarioReal(respuestaTx.getCostoUnitario());
-            detalle.setCostoTotalReal(respuestaTx.getCostoTotal());
+            BigDecimal precio = producto.getCostoPromedioActual();
+            if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
+                precio = producto.getPrecioUnitario();
+            }
 
-            detalleFacturaRepository.save(detalle);
+            BigDecimal cantidad = new BigDecimal(dto.getCantidad());
+
+            BigDecimal descuentoItem = dto.getDescuento() != null ? dto.getDescuento() : BigDecimal.ZERO;
+            BigDecimal subtotalItem = precio.multiply(cantidad).subtract(descuentoItem).setScale(2, RoundingMode.HALF_UP);
+
+            if (subtotalItem.compareTo(BigDecimal.ZERO) < 0) {
+                throw new RuntimeException("El descuento no puede ser mayor al valor total del producto: " + producto.getNombre());
+            }
+
+            if (producto.getGrabaIva()) {
+                subtotalIvaAplicado = subtotalIvaAplicado.add(subtotalItem);
+            } else {
+                subtotalIva0 = subtotalIva0.add(subtotalItem);
+            }
+
+            totalDescuento = totalDescuento.add(descuentoItem); // Sumar al totalizador global de la factura
+
+            DetalleFactura detalle = new DetalleFactura();
+            detalle.setProducto(producto);
+
+            Bodega bodega = new Bodega();
+            bodega.setId(dto.getBodegaId());
+            detalle.setBodega(bodega);
+
+            detalle.setCantidad(dto.getCantidad());
+            detalle.setPrecioUnitario(precio);
+            detalle.setDescuento(descuentoItem); // Guardar descuento en BD
+            detalle.setSubtotalItem(subtotalItem);
+
+            detallesParaGuardar.add(detalle);
         }
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
