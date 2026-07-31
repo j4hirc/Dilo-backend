@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -95,6 +96,7 @@ public class NegocioServiceImpl implements NegocioService {
         nuevoJefe.setNegocio(negocioGuardado);
         nuevoJefe.setRol(rolPropietario);
         nuevoJefe.setEstadoLaboral("Activo");
+        nuevoJefe.setFechaVinculacion(LocalDateTime.now());
 
         miembroNegocioRepository.save(nuevoJefe);
 
