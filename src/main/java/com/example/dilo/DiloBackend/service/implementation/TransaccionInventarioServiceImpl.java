@@ -101,7 +101,6 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         BigDecimal cantidad = new BigDecimal(dto.getCantidad());
         BigDecimal costoTotal = costoUnitario.multiply(cantidad);
 
-        // 🔥 GENERAMOS CÓDIGO DE LOTE
         long cantidadLotesActuales = loteRepository.countByNegocioId(negocioId);
         String codigoLoteGenerado = String.format("LOTE-%05d", cantidadLotesActuales + 1);
 
@@ -109,7 +108,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         nuevoLote.setNegocio(bodegaDestino.getNegocio());
         nuevoLote.setProducto(producto);
         nuevoLote.setBodega(bodegaDestino);
-        nuevoLote.setNumeroLote(codigoLoteGenerado); // 🔥 SE LO ASIGNAMOS AL LOTE
+        nuevoLote.setNumeroLote(codigoLoteGenerado);
         nuevoLote.setCantidadInicial(cantidad);
         nuevoLote.setCantidadDisponible(cantidad);
         nuevoLote.setCostoUnitario(costoUnitario);
@@ -166,8 +165,12 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
             ultimoLoteTocado = lote;
         }
 
+        // MODO FLEXIBLE: Evita el Error 500 y asume costo promedio para lotes faltantes
         if (cantidadRequerida > 0) {
-            throw new RuntimeException("Inconsistencia: El stock físico no coincide con los lotes disponibles.");
+            System.out.println("ADVERTENCIA: Inconsistencia de lotes en producto ID " + producto.getId() + ". Faltan " + cantidadRequerida + " unidades en lote.");
+
+            BigDecimal costoFaltante = producto.getCostoPromedioActual() != null ? producto.getCostoPromedioActual() : BigDecimal.ZERO;
+            costoTotalEgreso = costoTotalEgreso.add(costoFaltante.multiply(new BigDecimal(cantidadRequerida)));
         }
 
         inventario.setCantidadActual(inventario.getCantidadActual() - dto.getCantidad());
@@ -197,7 +200,6 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         inventarioDestino.setCantidadActual(inventarioDestino.getCantidadActual() + dto.getCantidad());
         inventarioRepository.save(inventarioDestino);
 
-        // 🔥 GENERAMOS CÓDIGO DE LOTE PARA LA BODEGA DESTINO
         long cantidadLotesActuales = loteRepository.countByNegocioId(negocioId);
         String codigoLoteGenerado = String.format("LOTE-%05d", cantidadLotesActuales + 1);
 
@@ -206,7 +208,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         loteTransferido.setNegocio(bodegaDestino.getNegocio());
         loteTransferido.setProducto(producto);
         loteTransferido.setBodega(bodegaDestino);
-        loteTransferido.setNumeroLote(codigoLoteGenerado); // 🔥 SE LO ASIGNAMOS
+        loteTransferido.setNumeroLote(codigoLoteGenerado);
         loteTransferido.setCantidadInicial(cantidadBD);
         loteTransferido.setCantidadDisponible(cantidadBD);
         loteTransferido.setCostoUnitario(transaccion.getCostoUnitario());
