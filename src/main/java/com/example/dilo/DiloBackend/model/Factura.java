@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -18,9 +17,9 @@ public class Factura {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = false)
+    // 🔥 CAMBIO: nullable = true para poder emitir a "Consumidor Final" (sin cliente registrado)
+    @JoinColumn(name = "cliente_id", nullable = true)
     private Cliente cliente;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -39,6 +38,7 @@ public class Factura {
     @Column(name = "subtotal_iva_aplicado", precision = 10, scale = 2)
     private BigDecimal subtotalIvaAplicado;
 
+    // 🔥 Este campo ya está perfecto para nuestro descuento global + descuentos de items
     @Column(name = "total_descuento", precision = 10, scale = 2)
     private BigDecimal totalDescuento;
 
@@ -54,6 +54,12 @@ public class Factura {
     @Column(name = "metodo_pago", nullable = false, length = 50)
     private String formaPago;
 
+    @Column(name = "detalles_tarjeta", length = 100)
+    private String detallesTarjeta;
+
+    @Column(name = "numero_cuotas")
+    private Integer numeroCuotas = 0;
+
     @Column(name = "clave_acceso_sri", length = 49)
     private String claveAccesoSri;
 
@@ -63,9 +69,5 @@ public class Factura {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "negocio_id", nullable = false)
     private Negocio negocio;
-
-
-    @Column(name = "numero_cuotas")
-    private Integer numeroCuotas = 0;
 
 }

@@ -4,7 +4,7 @@ import com.example.dilo.DiloBackend.dto.request.DetalleFacturaRequestDTO;
 import com.example.dilo.DiloBackend.dto.request.FacturaRequestDTO;
 import com.example.dilo.DiloBackend.dto.request.TransaccionInventarioRequestDTO;
 import com.example.dilo.DiloBackend.dto.response.FacturaResponseDTO;
-import com.example.dilo.DiloBackend.dto.response.TransaccionInventarioResponseDTO; // <-- Importante añadir este
+import com.example.dilo.DiloBackend.dto.response.TransaccionInventarioResponseDTO;
 import com.example.dilo.DiloBackend.exception.ResourceNotFoundException;
 import com.example.dilo.DiloBackend.model.*;
 import com.example.dilo.DiloBackend.repository.*;
@@ -15,6 +15,8 @@ import com.example.dilo.DiloBackend.service.mapper.FacturaMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -22,8 +24,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +51,6 @@ public class FacturaServiceImpl implements FacturaService {
         Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario emisor no encontrado"));
 
-        // 🔥 CORRECCIÓN: Si trae ID, buscamos al cliente. Si viene null, lo dejamos como null (Consumidor Final)
         Cliente cliente = null;
         if (request.getClienteId() != null) {
             cliente = clienteRepository.findById(request.getClienteId())
@@ -59,16 +58,17 @@ public class FacturaServiceImpl implements FacturaService {
         }
 
         ParametroGlobal ivaParam = parametroGlobalRepository.findById("IVA_ACTUAL")
-                .orElseThrow(() -> new RuntimeException("Error Crítico: El parámetro IVA_ACTUAL no está configurado en el sistema. Contacte al administrador."));
+                .orElseThrow(() -> new RuntimeException("Error Crítico: El parámetro IVA_ACTUAL no está configurado en el sistema."));
 
         BigDecimal porcentajeIva = new BigDecimal(ivaParam.getValor());
 
         BigDecimal subtotalIva0 = BigDecimal.ZERO;
         BigDecimal subtotalIvaAplicado = BigDecimal.ZERO;
-        BigDecimal totalDescuento = BigDecimal.ZERO;
+        BigDecimal descuentosItems = BigDecimal.ZERO; // Suma de los descuentos individuales
 
         List<DetalleFactura> detallesParaGuardar = new ArrayList<>();
 
+        // 🔥 PRIMER BUCLE: Validamos stock y calculamos los subtotales con descuento de cada producto
         for (DetalleFacturaRequestDTO dto : request.getDetalles()) {
             Producto producto = productoRepository.findById(dto.getProductoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + dto.getProductoId()));
@@ -78,76 +78,7 @@ public class FacturaServiceImpl implements FacturaService {
                     .orElseThrow(() -> new RuntimeException("El producto '" + producto.getNombre() + "' no está registrado en la bodega seleccionada."));
 
             if (inventario.getCantidadActual() < dto.getCantidad()) {
-                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() +
-                        ". Disponible: " + inventario.getCantidadActual());
-            }
-
-            BigDecimal precio = producto.getCostoPromedioActual();
-
-            if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
-                precio = producto.getPrecioUnitario();
-            }
-
-            BigDecimal cantidad = new BigDecimal(dto.getCantidad());
-            BigDecimal subtotalItem = precio.multiply(cantidad).setScale(2, RoundingMode.HALF_UP);
-
-            if (producto.getGrabaIva()) {
-                subtotalIvaAplicado = subtotalIvaAplicado.add(subtotalItem);
-            } else {
-                subtotalIva0 = subtotalIva0.add(subtotalItem);
-            }
-
-            DetalleFactura detalle = new DetalleFactura();
-            detalle.setProducto(producto);
-
-            Bodega bodega = new Bodega();
-            bodega.setId(dto.getBodegaId());
-            detalle.setBodega(bodega);
-
-            detalle.setCantidad(dto.getCantidad());
-            detalle.setPrecioUnitario(precio);
-            detalle.setDescuento(BigDecimal.ZERO);
-            detalle.setSubtotalItem(subtotalItem);
-
-            detallesParaGuardar.add(detalle);
-        }
-
-        BigDecimal totalIva = subtotalIvaAplicado.multiply(porcentajeIva).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal totalFactura = subtotalIva0.add(subtotalIvaAplicado).add(totalIva).subtract(totalDescuento);
-
-        Factura factura = new Factura();
-        factura.setNegocio(negocio);
-        // Aquí pasará el cliente si existe, o pasará "null" si es Consumidor Final
-        factura.setCliente(cliente);
-        factura.setUsuarioEmisor(usuario);
-        factura.setNumeroFactura("TEMP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        factura.setFechaEmision(LocalDateTime.now());
-        factura.setSubtotalIva0(subtotalIva0);
-        factura.setSubtotalIvaAplicado(subtotalIvaAplicado);
-        factura.setTotalDescuento(totalDescuento);
-
-        factura.setPorcentajeIvaAplicado(porcentajeIva.multiply(new BigDecimal("100")));
-
-        factura.setTotalIva(totalIva);
-        factura.setTotalFactura(totalFactura);
-        factura.setFormaPago(request.getMetodoPago());
-        factura.setEstadoSri("CREADA");
-
-        factura.setNumeroCuotas(request.getNumeroCuotas() != null ? request.getNumeroCuotas() : 0);
-
-        Factura facturaGuardada = facturaRepository.save(factura);
-
-        for (DetalleFacturaRequestDTO dto : request.getDetalles()) {
-            Producto producto = productoRepository.findById(dto.getProductoId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + dto.getProductoId()));
-
-            InventarioBodega inventario = inventarioRepository
-                    .findByBodegaIdAndNegocioIdAndProductoId(dto.getBodegaId(), negocioId, producto.getId())
-                    .orElseThrow(() -> new RuntimeException("El producto '" + producto.getNombre() + "' no está registrado en la bodega seleccionada."));
-
-            if (inventario.getCantidadActual() < dto.getCantidad()) {
-                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() +
-                        ". Disponible: " + inventario.getCantidadActual());
+                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() + ". Disponible: " + inventario.getCantidadActual());
             }
 
             BigDecimal precio = producto.getCostoPromedioActual();
@@ -156,8 +87,8 @@ public class FacturaServiceImpl implements FacturaService {
             }
 
             BigDecimal cantidad = new BigDecimal(dto.getCantidad());
-
             BigDecimal descuentoItem = dto.getDescuento() != null ? dto.getDescuento() : BigDecimal.ZERO;
+
             BigDecimal subtotalItem = precio.multiply(cantidad).subtract(descuentoItem).setScale(2, RoundingMode.HALF_UP);
 
             if (subtotalItem.compareTo(BigDecimal.ZERO) < 0) {
@@ -170,21 +101,69 @@ public class FacturaServiceImpl implements FacturaService {
                 subtotalIva0 = subtotalIva0.add(subtotalItem);
             }
 
-            totalDescuento = totalDescuento.add(descuentoItem); // Sumar al totalizador global de la factura
+            descuentosItems = descuentosItems.add(descuentoItem);
 
             DetalleFactura detalle = new DetalleFactura();
             detalle.setProducto(producto);
-
             Bodega bodega = new Bodega();
             bodega.setId(dto.getBodegaId());
             detalle.setBodega(bodega);
-
             detalle.setCantidad(dto.getCantidad());
             detalle.setPrecioUnitario(precio);
-            detalle.setDescuento(descuentoItem); // Guardar descuento en BD
+            detalle.setDescuento(descuentoItem);
             detalle.setSubtotalItem(subtotalItem);
 
             detallesParaGuardar.add(detalle);
+        }
+
+        // 🔥 CÁLCULOS GLOBALES (IVA y Descuento extra)
+        BigDecimal descuentoGlobal = request.getDescuentoGlobal() != null ? request.getDescuentoGlobal() : BigDecimal.ZERO;
+        BigDecimal totalDescuentosGenerales = descuentosItems.add(descuentoGlobal); // Sumamos todos los descuentos para guardarlos en la BD
+
+        BigDecimal totalIva = subtotalIvaAplicado.multiply(porcentajeIva).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalFactura = subtotalIva0.add(subtotalIvaAplicado).add(totalIva).subtract(descuentoGlobal);
+
+        if (totalFactura.compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("El descuento global no puede superar el total de la factura.");
+        }
+
+        // 🔥 CREAR FACTURA
+        Factura factura = new Factura();
+        factura.setNegocio(negocio);
+        factura.setCliente(cliente);
+        factura.setUsuarioEmisor(usuario);
+        factura.setNumeroFactura("TEMP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        factura.setFechaEmision(LocalDateTime.now());
+        factura.setSubtotalIva0(subtotalIva0);
+        factura.setSubtotalIvaAplicado(subtotalIvaAplicado);
+        factura.setTotalDescuento(totalDescuentosGenerales);
+        factura.setPorcentajeIvaAplicado(porcentajeIva.multiply(new BigDecimal("100")));
+        factura.setTotalIva(totalIva);
+        factura.setTotalFactura(totalFactura);
+        factura.setFormaPago(request.getMetodoPago());
+        factura.setEstadoSri("CREADA");
+        factura.setNumeroCuotas(request.getNumeroCuotas() != null ? request.getNumeroCuotas() : 0);
+        factura.setDetallesTarjeta(request.getTarjeta());
+
+        Factura facturaGuardada = facturaRepository.save(factura);
+
+        // 🔥 SEGUNDO BUCLE: Registrar movimiento de inventario (Kardex) y vincular detalle a factura
+        for (DetalleFactura detalle : detallesParaGuardar) {
+            detalle.setFactura(facturaGuardada);
+
+            TransaccionInventarioRequestDTO egresoVenta = new TransaccionInventarioRequestDTO();
+            egresoVenta.setTipo("EGRESO");
+            egresoVenta.setProductoId(detalle.getProducto().getId());
+            egresoVenta.setBodegaOrigenId(detalle.getBodega().getId());
+            egresoVenta.setCantidad(detalle.getCantidad());
+            egresoVenta.setMotivo("Venta según Factura #" + facturaGuardada.getNumeroFactura());
+
+            TransaccionInventarioResponseDTO respuestaTx = transaccionService.registrarTransaccion(negocioId, emailUsuario, egresoVenta);
+
+            detalle.setCostoUnitarioReal(respuestaTx.getCostoUnitario());
+            detalle.setCostoTotalReal(respuestaTx.getCostoTotal());
+
+            detalleFacturaRepository.save(detalle);
         }
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -200,7 +179,6 @@ public class FacturaServiceImpl implements FacturaService {
     @Override
     @Transactional(readOnly = true)
     public List<FacturaResponseDTO> obtenerFacturasPorNegocio(Long negocioId) {
-
         negocioRepository.findById(negocioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
 
