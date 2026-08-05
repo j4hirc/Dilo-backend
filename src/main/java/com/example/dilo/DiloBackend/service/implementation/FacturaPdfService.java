@@ -35,7 +35,6 @@ public class FacturaPdfService {
 
             Negocio negocio = factura.getNegocio();
 
-            // ---- Encabezado: negocio (izq) + caja de factura (der) ----
             PdfPTable header = new PdfPTable(2);
             header.setWidthPercentage(100);
             header.setWidths(new float[]{1.2f, 1f});
@@ -77,7 +76,6 @@ public class FacturaPdfService {
             document.add(header);
             document.add(new Paragraph(" "));
 
-            // ---- Datos del cliente ----
             PdfPTable cliente = new PdfPTable(4);
             cliente.setWidthPercentage(100);
             cliente.setWidths(new float[]{2f, 4f, 1.5f, 2.5f});
@@ -89,7 +87,6 @@ public class FacturaPdfService {
             document.add(cliente);
             document.add(new Paragraph(" "));
 
-            // ---- Tabla de productos ----
             PdfPTable tabla = new PdfPTable(4);
             tabla.setWidthPercentage(100);
             tabla.setWidths(new float[]{1f, 4f, 1.5f, 1.5f});
@@ -112,7 +109,6 @@ public class FacturaPdfService {
             document.add(tabla);
             document.add(new Paragraph(" "));
 
-            // ---- Totales ----
             BigDecimal subtotal = factura.getSubtotalIva0().add(factura.getSubtotalIvaAplicado());
 
             PdfPTable totales = new PdfPTable(2);

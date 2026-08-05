@@ -24,10 +24,9 @@ public class CompraController {
     @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'SUPER_ADMIN', 'PROPIETARIO', 'BODEGUERO')")
     public ResponseEntity<CompraResponseDTO> registrarCompra(
             @PathVariable Long negocioId,
-            Authentication authentication, // Extraemos la sesión actual de Spring Security
+            Authentication authentication,
             @Valid @RequestBody CompraRequestDTO requestDTO) {
 
-        // Obtenemos el email del usuario logueado directamente del token JWT
         String emailUsuario = authentication.getName();
 
         CompraResponseDTO compraRegistrada = compraService.registrarCompra(negocioId, emailUsuario, requestDTO);

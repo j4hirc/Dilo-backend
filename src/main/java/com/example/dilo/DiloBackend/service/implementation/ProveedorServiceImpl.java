@@ -37,7 +37,7 @@ public class ProveedorServiceImpl implements ProveedorService {
     }
 
     @Override
-    @Transactional(readOnly = true) // 🔥 SOLUCIÓN AL ERROR 500
+    @Transactional(readOnly = true)
     public ProveedorResponseDTO getById(Long id, Long negocioId) {
         Proveedor proveedor = findProveedorAndValidateNegocio(id, negocioId);
         return proveedorMapper.toDto(proveedor);
@@ -66,7 +66,6 @@ public class ProveedorServiceImpl implements ProveedorService {
     public ProveedorResponseDTO update(Long id, Long negocioId, ProveedorRequestDTO requestDTO) {
         Proveedor proveedor = findProveedorAndValidateNegocio(id, negocioId);
 
-        // Si cambia el DNI, verificar que el nuevo no exista en otro proveedor
         if (!proveedor.getDni().equals(requestDTO.getDni()) && proveedorRepository.existsByDni(requestDTO.getDni())) {
             throw new RuntimeException("El DNI " + requestDTO.getDni() + " ya está en uso por otro proveedor.");
         }
@@ -92,7 +91,6 @@ public class ProveedorServiceImpl implements ProveedorService {
         proveedorRepository.delete(proveedor);
     }
 
-    // Métodos Auxiliares
     private Proveedor findProveedorAndValidateNegocio(Long id, Long negocioId) {
         Proveedor proveedor = proveedorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado"));

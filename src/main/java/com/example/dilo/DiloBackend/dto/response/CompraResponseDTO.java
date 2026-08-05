@@ -15,6 +15,5 @@ public class CompraResponseDTO {
     private LocalDateTime fechaCompra;
     private BigDecimal totalCompra;
 
-    // Lista con el detalle de los productos que ingresaron
     private List<DetalleCompraResponseDTO> detalles;
 }

@@ -27,7 +27,6 @@ public class CompraMapper {
             dto.setBodegaIngresoNombre(compra.getBodegaIngreso().getNombre());
         }
 
-        // Mapear los lotes como detalles de la compra
         if (lotesGenerados != null) {
             List<DetalleCompraResponseDTO> detallesDto = lotesGenerados.stream().map(lote -> {
                 DetalleCompraResponseDTO detalle = new DetalleCompraResponseDTO();

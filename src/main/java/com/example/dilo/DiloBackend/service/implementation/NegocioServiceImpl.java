@@ -65,7 +65,6 @@ public class NegocioServiceImpl implements NegocioService {
 
         Negocio negocio = negocioMapper.toEntity(negocioRequestDTO);
 
-        // 🔥 NUEVO: Validar y asignar el método de costeo al nacer el negocio
         if (negocioRequestDTO.getMetodoCosteo() != null && !negocioRequestDTO.getMetodoCosteo().isEmpty()) {
             negocio.setMetodoCosteo(negocioRequestDTO.getMetodoCosteo().toUpperCase());
         } else {

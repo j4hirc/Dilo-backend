@@ -21,10 +21,8 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public List<AlertaCaducidadResponseDTO> obtenerAlertasCaducidad(Long negocioId, int diasAviso) {
         LocalDate hoy = LocalDate.now();
-        // Calculamos la fecha límite (ejemplo: hoy + 30 días)
         LocalDate fechaLimite = hoy.plusDays(diasAviso);
 
-        // Traemos de BD solo los lotes que vencen antes o igual a esa fecha límite
         List<Lote> lotesEnRiesgo = loteRepository.findLotesProximosAVencer(negocioId, fechaLimite);
 
         return lotesEnRiesgo.stream().map(lote -> {
@@ -37,7 +35,6 @@ public class DashboardServiceImpl implements DashboardService {
             dto.setUnidadMedida(lote.getProducto().getUnidadMedida());
             dto.setFechaCaducidad(lote.getFechaCaducidad());
 
-            // Calculamos exactamente los días que faltan
             long diasRestantes = ChronoUnit.DAYS.between(hoy, lote.getFechaCaducidad());
             dto.setDiasRestantes(diasRestantes);
 

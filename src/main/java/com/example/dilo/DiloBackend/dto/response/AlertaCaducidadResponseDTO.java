@@ -13,5 +13,5 @@ public class AlertaCaducidadResponseDTO {
     private BigDecimal cantidadDisponible;
     private String unidadMedida;
     private LocalDate fechaCaducidad;
-    private long diasRestantes; // Super útil para el frontend
+    private long diasRestantes;
 }

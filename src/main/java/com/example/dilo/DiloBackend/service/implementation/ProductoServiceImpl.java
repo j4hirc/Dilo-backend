@@ -72,7 +72,6 @@ public class ProductoServiceImpl implements ProductoService {
         producto.setNegocio(negocio);
         producto.setCategoria(categoria);
 
-        // Manejo de valores por defecto si no vienen en el request
         if (producto.getUnidadMedida() == null) producto.setUnidadMedida("UNIDADES");
         if (producto.getTieneCaducidad() == null) producto.setTieneCaducidad(false);
 
@@ -111,7 +110,6 @@ public class ProductoServiceImpl implements ProductoService {
         producto.setGrabaIva(requestDTO.getGrabaIva());
         producto.setCategoria(categoria);
 
-        // --- NUEVOS CAMPOS ---
         producto.setUnidadMedida(requestDTO.getUnidadMedida() != null ? requestDTO.getUnidadMedida() : "UNIDADES");
         producto.setTieneCaducidad(requestDTO.getTieneCaducidad() != null ? requestDTO.getTieneCaducidad() : false);
 

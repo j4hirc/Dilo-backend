@@ -68,7 +68,6 @@ public class FacturaServiceImpl implements FacturaService {
 
         List<DetalleFactura> detallesParaGuardar = new ArrayList<>();
 
-        // 🔥 PRIMER BUCLE: Validamos stock y calculamos los subtotales con descuento de cada producto
         for (DetalleFacturaRequestDTO dto : request.getDetalles()) {
             Producto producto = productoRepository.findById(dto.getProductoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + dto.getProductoId()));
@@ -116,7 +115,6 @@ public class FacturaServiceImpl implements FacturaService {
             detallesParaGuardar.add(detalle);
         }
 
-        // 🔥 CÁLCULOS GLOBALES (IVA y Descuento extra)
         BigDecimal descuentoGlobal = request.getDescuentoGlobal() != null ? request.getDescuentoGlobal() : BigDecimal.ZERO;
         BigDecimal totalDescuentosGenerales = descuentosItems.add(descuentoGlobal); // Sumamos todos los descuentos para guardarlos en la BD
 
@@ -127,7 +125,6 @@ public class FacturaServiceImpl implements FacturaService {
             throw new RuntimeException("El descuento global no puede superar el total de la factura.");
         }
 
-        // 🔥 CREAR FACTURA
         Factura factura = new Factura();
         factura.setNegocio(negocio);
         factura.setCliente(cliente);
@@ -147,7 +144,6 @@ public class FacturaServiceImpl implements FacturaService {
 
         Factura facturaGuardada = facturaRepository.save(factura);
 
-        // 🔥 SEGUNDO BUCLE: Registrar movimiento de inventario (Kardex) y vincular detalle a factura
         for (DetalleFactura detalle : detallesParaGuardar) {
             detalle.setFactura(facturaGuardada);
 

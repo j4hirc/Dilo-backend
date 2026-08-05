@@ -26,7 +26,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final UsuarioMapper usuarioMapper;
-    private final ParroquiaRepository parroquiaRepository; // 🔥 Para actualizar la parroquia
+    private final ParroquiaRepository parroquiaRepository;
     private final SupabaseStorageService storageService;
     private final PasswordEncoder passwordEncoder;
 
@@ -57,7 +57,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con el id: " + id));
 
-        // 2. Actualizamos los datos de texto
         usuario.setDni(dto.getDni());
         usuario.setPrimerNombre(dto.getPrimerNombre());
         usuario.setSegundoNombre(dto.getSegundoNombre());
@@ -93,26 +92,18 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public void cambiarPassword(String email, ChangePasswordRequestDTO dto) {
-        // 1. Buscar al usuario
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        // 🔥 Se eliminó la validación de la contraseña actual
-
-        // 2. Validar que la nueva contraseña y la confirmación coincidan
         if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
             throw new IllegalArgumentException("Las contraseñas nuevas no coinciden");
         }
 
-        // (Opcional) Validar la fortaleza de la contraseña aquí (longitud, mayúsculas, etc.)
-
-        // 3. Encriptar y guardar la nueva contraseña
         usuario.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         usuarioRepository.save(usuario);
     }
 
 
-    // 🔥 NUEVO: ACTUALIZAR MI PERFIL (Con foto)
     @Override
     @Transactional
     public UsuarioResponseDTO actualizarMiPerfil(String email, UpdateUsuarioDTO dto, MultipartFile foto) {
@@ -127,14 +118,12 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (dto.getDireccion() != null) usuario.setDireccion(dto.getDireccion());
         if (dto.getFechaNacimiento() != null) usuario.setFechaNacimiento(dto.getFechaNacimiento());
 
-        // Actualizamos parroquia si se envió un ID
         if (dto.getId_parroquia() != null) {
             Parroquia parroquia = parroquiaRepository.findById(dto.getId_parroquia())
                     .orElseThrow(() -> new ResourceNotFoundException("Parroquia no encontrada"));
             usuario.setParroquia(parroquia);
         }
 
-        // Subimos la foto si el usuario seleccionó una
         if (foto != null && !foto.isEmpty()) {
             try {
                 String urlFoto = storageService.uploadFile(foto, "perfiles");

@@ -62,7 +62,6 @@ public class CompraServiceImpl implements CompraService {
 
         Compra compraGuardada = compraRepository.save(compra);
 
-        // 🔥 OBTENEMOS LA CANTIDAD DE LOTES DEL NEGOCIO UNA SOLA VEZ ANTES DEL BUCLE
         long cantidadLotesActuales = loteRepository.countByNegocioId(negocioId);
 
         for (DetalleCompraRequestDTO detalle : requestDTO.getDetalles()) {
@@ -75,7 +74,6 @@ public class CompraServiceImpl implements CompraService {
 
             totalCompra = totalCompra.add(costoTotalLote);
 
-            // 🔥 AUMENTAMOS EL CONTADOR Y GENERAMOS EL CÓDIGO DEL LOTE
             cantidadLotesActuales++;
             String codigoLoteGenerado = String.format("LOTE-%05d", cantidadLotesActuales);
 

@@ -99,7 +99,6 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
             return miembroNegocioMapper.toDto(actualizado);
 
         } else {
-            // 🔥 SOLUCIÓN: Si rechaza, borramos físicamente el registro.
             miembroNegocioRepository.delete(miembro);
             return null;
         }
@@ -115,7 +114,6 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
             throw new IllegalArgumentException("El miembro no pertenece al negocio especificado");
         }
 
-        // 🔥 SOLUCIÓN: En lugar de pasarlo a inactivo, lo eliminamos físicamente del negocio.
         miembroNegocioRepository.delete(miembro);
 
         return null;
@@ -177,8 +175,6 @@ public class MiembroNegocioServiceImpl implements MiembroNegocioService {
                 .findFirst()
                 .orElse(null);
 
-        // 🔥 CÓDIGO LIMPIO: Como los rechazados y desactivados se borran,
-        // si la relación existe es porque está adentro o en PENDIENTE.
         if (relacionExistente != null) {
             throw new IllegalArgumentException("Ya perteneces a este negocio o tienes una solicitud en proceso.");
         }

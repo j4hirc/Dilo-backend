@@ -15,8 +15,6 @@ public class ProductoResponseDTO {
     private String nombre;
     private BigDecimal precioUnitario;
     private Boolean grabaIva;
-
-    // --- NUEVOS CAMPOS ---
     private String unidadMedida;
     private Boolean tieneCaducidad;
 

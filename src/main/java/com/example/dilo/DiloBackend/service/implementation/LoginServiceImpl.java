@@ -36,25 +36,20 @@ public class LoginServiceImpl implements LoginService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Obtener el usuario completo
         Usuario usuario = usuarioRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // 1. Buscar TODOS los negocios a los que pertenece el usuario en el historial
         List<MiembroNegocio> historialMiembros = miembroNegocioRepository.findByUsuarioId(usuario.getId());
 
-        // 🔥 2. FILTRO CLAVE: Ignoramos los negocios donde fue desactivado (INACTIVO) o rechazado
         List<MiembroNegocio> miembrosActivos = historialMiembros.stream()
                 .filter(m -> !"INACTIVO".equalsIgnoreCase(m.getEstadoLaboral()) && !"RECHAZADO".equalsIgnoreCase(m.getEstadoInvitacion()))
                 .collect(Collectors.toList());
 
-        // 3. Extraemos los negocios válidos
         List<NegocioResponseDTO> negocios = miembrosActivos.stream()
                 .map(m -> negocioMapper.toDto(m.getNegocio()))
                 .distinct() // En caso de que tenga multiples roles en el mismo negocio, evitamos duplicar
                 .collect(Collectors.toList());
 
-        // 4. Extraemos los roles válidos
         List<String> roles = miembrosActivos.stream()
                 .map(m -> m.getRol().getNombre())
                 .distinct()

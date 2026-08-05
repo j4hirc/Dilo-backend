@@ -24,7 +24,6 @@ public class ProductoMapper {
         dto.setPrecioUnitario(producto.getPrecioUnitario());
         dto.setGrabaIva(producto.getGrabaIva());
 
-        // --- NUEVOS CAMPOS MAPEADOS ---
         dto.setUnidadMedida(producto.getUnidadMedida());
         dto.setTieneCaducidad(producto.getTieneCaducidad());
         dto.setCostoPromedioActual(producto.getCostoPromedioActual());

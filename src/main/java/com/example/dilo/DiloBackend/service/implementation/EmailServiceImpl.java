@@ -19,7 +19,6 @@ public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
 
-    // Aquí leemos el correo que agregaste en el properties
     @Value("${brevo.sender.email}")
     private String senderEmail;
 
@@ -68,7 +67,6 @@ public class EmailServiceImpl implements EmailService {
     private void enviarPeticionSmtpConAdjuntos(String destinatario, String subject, String htmlContent, byte[] pdf, byte[] xml, String numFactura) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            // El 'true' es la clave aquí: indica que el correo es Multipart (lleva adjuntos)
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(senderEmail, senderName);
@@ -76,7 +74,6 @@ public class EmailServiceImpl implements EmailService {
             helper.setSubject(subject);
             helper.setText(htmlContent, true);
 
-            // Adjuntar los archivos en la memoria
             if (pdf != null && pdf.length > 0) {
                 helper.addAttachment("Factura_" + numFactura + ".pdf", new org.springframework.core.io.ByteArrayResource(pdf));
             }

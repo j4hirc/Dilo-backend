@@ -77,7 +77,7 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
     public List<CuentaPorCobrarResponseDTO> listarPorNegocio(Long negocioId) {
         return cuentaRepository.findByNegocioIdOrderByFechaVencimientoAsc(negocioId)
                 .stream()
-                .map(cuentaMapper::toDto) // 2. Usamos el mapper para la lista
+                .map(cuentaMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -86,7 +86,7 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
         CuentasPorCobrar cuenta = cuentaRepository.findByIdWithCuotas(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cuenta por cobrar no encontrada"));
 
-        return cuentaMapper.toDto(cuenta); // 3. Usamos el mapper para el detalle
+        return cuentaMapper.toDto(cuenta);
     }
 
 
@@ -94,7 +94,6 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
     @Transactional
     public void registrarPagoCuota(Long cuentaId, BigDecimal montoPago) {
 
-        // 1. Buscamos directamente la DEUDA (CuentaPorCobrar), no una cuota individual
         CuentasPorCobrar cuentaTotal = cuentaRepository.findById(cuentaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cuenta por cobrar no encontrada"));
 
@@ -102,12 +101,10 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
             throw new RuntimeException("La deuda total de esta factura ya está completamente pagada.");
         }
 
-        // 2. Validamos que el pago no supere la deuda TOTAL
         if (montoPago.compareTo(cuentaTotal.getSaldoPendiente()) > 0) {
             throw new RuntimeException("El monto a abonar ($" + montoPago + ") es mayor a la deuda total restante ($" + cuentaTotal.getSaldoPendiente() + ").");
         }
 
-        // 3. Obtenemos TODAS las cuotas pendientes ordenadas por número de cuota
         List<Cuota> cuotasPendientes = cuentaTotal.getCuotas().stream()
                 .filter(c -> !c.getEstado().equals("PAGADA"))
                 .sorted(java.util.Comparator.comparing(Cuota::getNumeroCuota))
@@ -122,10 +119,8 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
             BigDecimal montoADescontar;
 
             if (abonoRestante.compareTo(saldoCuota) >= 0) {
-                // El abono cubre toda esta cuota
                 montoADescontar = saldoCuota;
             } else {
-                // El abono solo cubre una parte
                 montoADescontar = abonoRestante;
             }
 
@@ -137,7 +132,6 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
             }
         }
 
-        // 4. Descontamos el saldo de la Deuda Total
         cuentaTotal.setSaldoPendiente(cuentaTotal.getSaldoPendiente().subtract(montoPago));
 
         if (cuentaTotal.getSaldoPendiente().compareTo(BigDecimal.ZERO) == 0) {

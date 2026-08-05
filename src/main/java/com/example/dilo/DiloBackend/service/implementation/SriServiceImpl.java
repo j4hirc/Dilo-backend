@@ -50,11 +50,9 @@ public class SriServiceImpl implements SriService {
 
             List<DetalleFactura> detalles = detalleFacturaRepository.findByFacturaId(factura.getId());
 
-            // Generamos el XML
             String xmlSinFirma = generarXMLFactura(factura, detalles, claveAcceso);
             byte[] xmlBytes = xmlSinFirma.getBytes(StandardCharsets.UTF_8);
 
-            // ENVIAR AL SRI SIMULADO
             System.out.println("📤 Enviando comprobante simulado al SRI...");
             boolean recibido = sriSoapClient.enviarRecepcion(xmlBytes);
 
@@ -93,7 +91,6 @@ public class SriServiceImpl implements SriService {
 
             byte[] pdfBytes = facturaPdfService.generarPdfFactura(factura, detalles);
 
-            // 🔥 CORRECCIÓN: Validamos que exista el cliente y tenga email para no tirar NullPointerException
             if (pdfBytes != null && pdfBytes.length > 0) {
                 if (factura.getCliente() != null && factura.getCliente().getEmail() != null && !factura.getCliente().getEmail().isEmpty()) {
                     emailService.enviarFacturaSri(
@@ -113,7 +110,7 @@ public class SriServiceImpl implements SriService {
 
         } catch (Exception e) {
             System.err.println("❌ Error procesando factura en el SRI: " + e.getMessage());
-            e.printStackTrace(); // Para ver exactamente la línea si vuelve a fallar
+            e.printStackTrace();
             if (factura != null) {
                 factura.setEstadoSri("ERROR_SRI");
                 facturaRepository.save(factura);
@@ -183,7 +180,6 @@ public class SriServiceImpl implements SriService {
         xml.append("    <dirEstablecimiento>").append(negocio.getDireccion()).append("</dirEstablecimiento>\n");
         xml.append("    <obligadoContabilidad>NO</obligadoContabilidad>\n");
 
-        // 🔥 CORRECCIÓN: Manejo de Consumidor Final a prueba de balas para el XML
         String tipoIdComprador = "07";
         String razonSocialComprador = "CONSUMIDOR FINAL";
         String identificacionComprador = "9999999999999";

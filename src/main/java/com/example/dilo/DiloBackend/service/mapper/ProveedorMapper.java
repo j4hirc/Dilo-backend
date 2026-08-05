@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProveedorMapper {
 
-    private final CategoriaMapper categoriaMapper; // Reutilizamos tu mapper actual
+    private final CategoriaMapper categoriaMapper;
 
     public ProveedorResponseDTO toDto(Proveedor proveedor) {
         ProveedorResponseDTO dto = new ProveedorResponseDTO();

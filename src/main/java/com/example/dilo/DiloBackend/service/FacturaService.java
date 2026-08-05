@@ -8,6 +8,5 @@ import java.util.List;
 public interface FacturaService {
     FacturaResponseDTO generarFactura(Long negocioId, String emailUsuario, FacturaRequestDTO requestDTO);
 
-    // NUEVO: Método para listar las facturas
     List<FacturaResponseDTO> obtenerFacturasPorNegocio(Long negocioId);
 }

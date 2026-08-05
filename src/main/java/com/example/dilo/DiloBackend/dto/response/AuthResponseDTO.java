@@ -10,9 +10,9 @@ public class AuthResponseDTO {
     private List<NegocioResponseDTO> businesses;
     private Long selectedBusinessId;
     
-    private List<String> roles; // List of roles in the selected business
-    private String rol; // The primary role (if only one)
-    private boolean needsRoleSelection; // True if they have multiple roles
+    private List<String> roles;
+    private String rol;
+    private boolean needsRoleSelection;
     
     private boolean needsBusinessSelection;
     private String token;

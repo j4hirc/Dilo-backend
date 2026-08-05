@@ -31,7 +31,6 @@ public class TransaccionInventarioMapper {
             dto.setBodegaDestinoNombre(transaccion.getBodegaDestino().getNombre());
         }
 
-        // --- MAPEO DE NUEVOS CAMPOS ---
         dto.setCostoUnitario(transaccion.getCostoUnitario());
         dto.setCostoTotal(transaccion.getCostoTotal());
         dto.setMetodoAplicado(transaccion.getMetodoAplicado());
@@ -50,11 +49,9 @@ public class TransaccionInventarioMapper {
         transaccion.setCantidad(dto.getCantidad());
         transaccion.setMotivo(dto.getMotivo());
 
-        // --- MAPEO DE NUEVOS CAMPOS ---
         transaccion.setCostoUnitario(dto.getCostoUnitario());
         transaccion.setDocumentoReferencia(dto.getDocumentoReferencia());
 
-        // Cálculo preliminar del costo total (si el service no lo sobrescribe después)
         if (dto.getCostoUnitario() != null && dto.getCantidad() != null) {
             transaccion.setCostoTotal(dto.getCostoUnitario().multiply(new BigDecimal(dto.getCantidad())));
         }

@@ -165,7 +165,6 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
             ultimoLoteTocado = lote;
         }
 
-        // MODO FLEXIBLE: Evita el Error 500 y asume costo promedio para lotes faltantes
         if (cantidadRequerida > 0) {
             System.out.println("ADVERTENCIA: Inconsistencia de lotes en producto ID " + producto.getId() + ". Faltan " + cantidadRequerida + " unidades en lote.");
 

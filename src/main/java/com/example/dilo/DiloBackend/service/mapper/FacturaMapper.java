@@ -21,10 +21,10 @@ public class FacturaMapper {
             String nombre = factura.getCliente().getPrimerNombre() != null ? factura.getCliente().getPrimerNombre() : "";
             String apellido = factura.getCliente().getApellidoPaterno() != null ? factura.getCliente().getApellidoPaterno() : "";
             dto.setClienteNombre((nombre + " " + apellido).trim());
-            dto.setClienteIdentificacion(factura.getCliente().getDni()); // DNI real
+            dto.setClienteIdentificacion(factura.getCliente().getDni());
         } else {
             dto.setClienteNombre("Consumidor Final");
-            dto.setClienteIdentificacion("9999999999999"); // DNI por defecto
+            dto.setClienteIdentificacion("9999999999999");
         }
         dto.setSubtotalIva0(factura.getSubtotalIva0());
         dto.setSubtotalIvaAplicado(factura.getSubtotalIvaAplicado());
@@ -50,8 +50,6 @@ public class FacturaMapper {
         dto.setCantidad(detalle.getCantidad());
         dto.setPrecioUnitario(detalle.getPrecioUnitario());
         dto.setSubtotalItem(detalle.getSubtotalItem());
-
-        // --- NUEVO: Mapeo de los costos reales para el reporte de utilidad ---
         dto.setCostoUnitarioReal(detalle.getCostoUnitarioReal());
         dto.setCostoTotalReal(detalle.getCostoTotalReal());
 

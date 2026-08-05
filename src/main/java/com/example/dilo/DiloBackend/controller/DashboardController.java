@@ -22,8 +22,6 @@ public class DashboardController {
             @PathVariable Long negocioId,
             @RequestParam(defaultValue = "30") int dias) {
 
-        // Por defecto avisará los que vencen en los próximos 30 días,
-        // pero el frontend puede mandarle ?dias=60 si quiere ver más a futuro.
         return ResponseEntity.ok(dashboardService.obtenerAlertasCaducidad(negocioId, dias));
     }
 }

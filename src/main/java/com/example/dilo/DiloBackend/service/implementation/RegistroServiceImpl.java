@@ -47,7 +47,6 @@ public class RegistroServiceImpl implements RegistroService {
         usuario.setPassword(passwordEncoder.encode(registerUserDTO.getPassword()));
         usuario.setEstadoLaboral("Activo");
 
-        // 1. Buscamos y asignamos el rol básico que tienen todos
         Role rolBase = roleRepository.findByNombre("USUARIO_BASE")
                 .orElseThrow(() -> new ResourceNotFoundException("Rol USUARIO_BASE no encontrado en la base de datos"));
 

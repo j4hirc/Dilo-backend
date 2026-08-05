@@ -75,7 +75,6 @@ public class InventarioBodegaServiceImpl implements InventarioBodegaService {
 
             BigDecimal cantidadBD = new BigDecimal(requestDTO.getCantidadActual());
 
-            // 🔥 MAGIA AQUÍ: Generamos el número de lote secuencial por Negocio
             long cantidadLotesActuales = loteRepository.countByNegocioId(negocioId);
             String codigoLoteGenerado = String.format("LOTE-%05d", cantidadLotesActuales + 1);
 
