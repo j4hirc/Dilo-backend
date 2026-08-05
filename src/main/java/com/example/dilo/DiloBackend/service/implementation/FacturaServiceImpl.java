@@ -190,6 +190,7 @@ public class FacturaServiceImpl implements FacturaService {
             egresoVenta.setCantidad(detalle.getCantidad());
             egresoVenta.setMotivo("Venta según Factura #" + facturaGuardada.getNumeroFactura());
 
+            // Aquí el backend de inventario aplica el método de costeo (promedio/FIFO/LIFO)
             TransaccionInventarioResponseDTO respuestaTx =
                     transaccionService.registrarTransaccion(negocioId, emailUsuario, egresoVenta);
 
