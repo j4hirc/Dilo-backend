@@ -16,6 +16,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT u FROM Usuario u WHERE u.estadoLaboral != 'Unemployed'")
     List<Usuario> findPersonalActivo();
 
+    boolean existsByEmail(String email);
+    boolean existsByDni(String dni);
+
+
     @Query("SELECT m.usuario FROM MiembroNegocio m WHERE m.negocio.id = :negocioId")
     List<Usuario> findUsuariosByNegocioId(@Param("negocioId") Long negocioId);
 

@@ -16,6 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.HashSet;
 
 @Service
@@ -31,6 +33,29 @@ public class RegistroServiceImpl implements RegistroService {
 
     @Override
     public UsuarioResponseDTO registroUsuario(RegisterUserDTO registerUserDTO, MultipartFile foto) {
+        if (usuarioRepository.existsByDni(registerUserDTO.getDni())) {
+            throw new IllegalArgumentException("La cédula ingresada ya se encuentra registrada.");
+        }
+
+        if (usuarioRepository.existsByEmail(registerUserDTO.getEmail())) {
+            throw new IllegalArgumentException("El correo electrónico ya se encuentra registrado.");
+        }
+
+        if (!esCedulaValida(registerUserDTO.getDni())) {
+            throw new IllegalArgumentException("El número de cédula ecuatoriana no es válido.");
+        }
+
+        if (registerUserDTO.getFechaNacimiento() != null) {
+            int edad = Period.between(registerUserDTO.getFechaNacimiento(), LocalDate.now()).getYears();
+            if (edad < 18) {
+                throw new IllegalArgumentException("El usuario debe ser mayor de 18 años para registrarse.");
+            }
+        }
+
+        if (registerUserDTO.getPassword() == null || registerUserDTO.getPassword().length() < 8) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres.");
+        }
+
         try {
             if (foto != null && !foto.isEmpty()) {
                 String urlFoto = storageService.uploadFile(foto, "perfiles");
@@ -41,7 +66,7 @@ public class RegistroServiceImpl implements RegistroService {
         }
 
         Parroquia parroquia = parroquiaRepository.findById(registerUserDTO.getId_parroquia())
-                .orElseThrow(()-> new ResourceNotFoundException("Parroquia no encontrada con el id: " + registerUserDTO.getId_parroquia()));
+                .orElseThrow(() -> new ResourceNotFoundException("Parroquia no encontrada con el id: " + registerUserDTO.getId_parroquia()));
 
         Usuario usuario = usuarioMapper.toEntity(registerUserDTO, parroquia);
         usuario.setPassword(passwordEncoder.encode(registerUserDTO.getPassword()));
@@ -55,14 +80,33 @@ public class RegistroServiceImpl implements RegistroService {
         }
         usuario.getRoles().add(rolBase);
 
-        if (registerUserDTO.getEsAdmin() != null && registerUserDTO.getEsAdmin()) {
-            Role rolAdmin = roleRepository.findByNombre("SUPER_ADMIN") // <-- Cámbialo si en tu BD se llama diferente
-                    .orElseThrow(() -> new ResourceNotFoundException("Rol SUPER_ADMIN no encontrado en la base de datos"));
-            usuario.getRoles().add(rolAdmin);
-        }
-
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
-
         return usuarioMapper.toDto(usuarioGuardado);
+    }
+
+    private boolean esCedulaValida(String cedula) {
+        if (cedula == null || cedula.length() != 10 || !cedula.matches("\\d+")) {
+            return false;
+        }
+        int provincia = Integer.parseInt(cedula.substring(0, 2));
+        if (provincia < 1 || (provincia > 24 && provincia != 30)) {
+            return false;
+        }
+        int tercerDigito = Integer.parseInt(cedula.substring(2, 3));
+        if (tercerDigito >= 6) {
+            return false;
+        }
+        int suma = 0;
+        for (int i = 0; i < 9; i++) {
+            int digito = Character.getNumericValue(cedula.charAt(i));
+            if (i % 2 == 0) {
+                digito *= 2;
+                if (digito > 9) digito -= 9;
+            }
+            suma += digito;
+        }
+        int digitoVerificador = Character.getNumericValue(cedula.charAt(9));
+        int decenaSuperior = (suma % 10 == 0) ? suma : ((suma / 10) + 1) * 10;
+        return (decenaSuperior - suma) == digitoVerificador;
     }
 }
