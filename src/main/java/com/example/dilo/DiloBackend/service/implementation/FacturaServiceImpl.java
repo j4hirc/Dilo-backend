@@ -60,61 +60,42 @@ public class FacturaServiceImpl implements FacturaService {
         ParametroGlobal ivaParam = parametroGlobalRepository.findById("IVA_ACTUAL")
                 .orElseThrow(() -> new RuntimeException("Error Crítico: El parámetro IVA_ACTUAL no está configurado en el sistema."));
 
-        // IVA_ACTUAL suele guardarse como 0.15 o como 15 → normalizamos a fracción
         BigDecimal porcentajeIva = new BigDecimal(ivaParam.getValor());
-        if (porcentajeIva.compareTo(BigDecimal.ONE) > 0) {
-            porcentajeIva = porcentajeIva.divide(new BigDecimal("100"), 6, RoundingMode.HALF_UP);
-        }
 
         BigDecimal subtotalIva0 = BigDecimal.ZERO;
         BigDecimal subtotalIvaAplicado = BigDecimal.ZERO;
-        BigDecimal descuentosItems = BigDecimal.ZERO;
+        BigDecimal descuentosItems = BigDecimal.ZERO; // Suma de los descuentos individuales
 
         List<DetalleFactura> detallesParaGuardar = new ArrayList<>();
 
+        // 🔥 PRIMER BUCLE: Validamos stock y calculamos los subtotales con descuento de cada producto
         for (DetalleFacturaRequestDTO dto : request.getDetalles()) {
             Producto producto = productoRepository.findById(dto.getProductoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + dto.getProductoId()));
 
             InventarioBodega inventario = inventarioRepository
                     .findByBodegaIdAndNegocioIdAndProductoId(dto.getBodegaId(), negocioId, producto.getId())
-                    .orElseThrow(() -> new RuntimeException(
-                            "El producto '" + producto.getNombre() + "' no está registrado en la bodega seleccionada."));
+                    .orElseThrow(() -> new RuntimeException("El producto '" + producto.getNombre() + "' no está registrado en la bodega seleccionada."));
 
             if (inventario.getCantidadActual() < dto.getCantidad()) {
-                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre()
-                        + ". Disponible: " + inventario.getCantidadActual());
+                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() + ". Disponible: " + inventario.getCantidadActual());
             }
 
-            // 🔥 PRECIO DE VENTA = PVP (precioUnitario). El cliente paga el PVP.
-            BigDecimal precio = producto.getPrecioUnitario();
+            BigDecimal precio = producto.getCostoPromedioActual();
             if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new RuntimeException(
-                        "El producto '" + producto.getNombre() + "' no tiene precio de venta (PVP) configurado.");
-            }
-
-            // 🔥 COSTO PROMEDIO del producto → se guarda en el detalle (COGS / costeo de la factura)
-            BigDecimal costoPromedio = producto.getCostoPromedioActual();
-            if (costoPromedio == null || costoPromedio.compareTo(BigDecimal.ZERO) < 0) {
-                costoPromedio = BigDecimal.ZERO;
+                precio = producto.getPrecioUnitario();
             }
 
             BigDecimal cantidad = new BigDecimal(dto.getCantidad());
             BigDecimal descuentoItem = dto.getDescuento() != null ? dto.getDescuento() : BigDecimal.ZERO;
-            if (descuentoItem.compareTo(BigDecimal.ZERO) < 0) {
-                descuentoItem = BigDecimal.ZERO;
-            }
 
-            BigDecimal subtotalItem = precio.multiply(cantidad).subtract(descuentoItem)
-                    .setScale(2, RoundingMode.HALF_UP);
+            BigDecimal subtotalItem = precio.multiply(cantidad).subtract(descuentoItem).setScale(2, RoundingMode.HALF_UP);
 
             if (subtotalItem.compareTo(BigDecimal.ZERO) < 0) {
-                throw new RuntimeException(
-                        "El descuento no puede ser mayor al valor total del producto: " + producto.getNombre());
+                throw new RuntimeException("El descuento no puede ser mayor al valor total del producto: " + producto.getNombre());
             }
 
-            // Precios se tratan SIN IVA incluido (base + IVA = total) — sobre el PVP
-            if (Boolean.TRUE.equals(producto.getGrabaIva())) {
+            if (producto.getGrabaIva()) {
                 subtotalIvaAplicado = subtotalIvaAplicado.add(subtotalItem);
             } else {
                 subtotalIva0 = subtotalIva0.add(subtotalItem);
@@ -128,54 +109,31 @@ public class FacturaServiceImpl implements FacturaService {
             bodega.setId(dto.getBodegaId());
             detalle.setBodega(bodega);
             detalle.setCantidad(dto.getCantidad());
-            detalle.setPrecioUnitario(precio); // PVP (lo que cobra)
+            detalle.setPrecioUnitario(precio);
             detalle.setDescuento(descuentoItem);
             detalle.setSubtotalItem(subtotalItem);
-            // Costo promedio ya en el detalle (se confirma tras el egreso)
-            detalle.setCostoUnitarioReal(costoPromedio);
-            detalle.setCostoTotalReal(
-                    costoPromedio.multiply(cantidad).setScale(2, RoundingMode.HALF_UP));
 
             detallesParaGuardar.add(detalle);
         }
 
-        BigDecimal descuentoGlobal = request.getDescuentoGlobal() != null
-                ? request.getDescuentoGlobal()
-                : BigDecimal.ZERO;
-        if (descuentoGlobal.compareTo(BigDecimal.ZERO) < 0) {
-            descuentoGlobal = BigDecimal.ZERO;
-        }
+        // 🔥 CÁLCULOS GLOBALES (IVA y Descuento extra)
+        BigDecimal descuentoGlobal = request.getDescuentoGlobal() != null ? request.getDescuentoGlobal() : BigDecimal.ZERO;
+        BigDecimal totalDescuentosGenerales = descuentosItems.add(descuentoGlobal); // Sumamos todos los descuentos para guardarlos en la BD
 
-        BigDecimal sumaBases = subtotalIva0.add(subtotalIvaAplicado);
-        if (descuentoGlobal.compareTo(sumaBases) > 0) {
+        BigDecimal totalIva = subtotalIvaAplicado.multiply(porcentajeIva).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalFactura = subtotalIva0.add(subtotalIvaAplicado).add(totalIva).subtract(descuentoGlobal);
+
+        if (totalFactura.compareTo(BigDecimal.ZERO) < 0) {
             throw new RuntimeException("El descuento global no puede superar el total de la factura.");
         }
 
-        // Prorratear descuento global sobre bases gravada / 0%
-        BigDecimal baseGravada = subtotalIvaAplicado;
-        BigDecimal base0 = subtotalIva0;
-        if (descuentoGlobal.compareTo(BigDecimal.ZERO) > 0 && sumaBases.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal descSobreGravada = descuentoGlobal
-                    .multiply(subtotalIvaAplicado)
-                    .divide(sumaBases, 6, RoundingMode.HALF_UP)
-                    .setScale(2, RoundingMode.HALF_UP);
-            BigDecimal descSobre0 = descuentoGlobal.subtract(descSobreGravada).setScale(2, RoundingMode.HALF_UP);
-            baseGravada = subtotalIvaAplicado.subtract(descSobreGravada).max(BigDecimal.ZERO);
-            base0 = subtotalIva0.subtract(descSobre0).max(BigDecimal.ZERO);
-        }
-
-        BigDecimal totalIva = baseGravada.multiply(porcentajeIva).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal totalFactura = base0.add(baseGravada).add(totalIva).setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal totalDescuentosGenerales = descuentosItems.add(descuentoGlobal);
-
+        // 🔥 CREAR FACTURA
         Factura factura = new Factura();
         factura.setNegocio(negocio);
         factura.setCliente(cliente);
         factura.setUsuarioEmisor(usuario);
         factura.setNumeroFactura("TEMP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         factura.setFechaEmision(LocalDateTime.now());
-        // Bases ANTES del descuento global (lo usual en reportes); el total ya refleja el descuento
         factura.setSubtotalIva0(subtotalIva0);
         factura.setSubtotalIvaAplicado(subtotalIvaAplicado);
         factura.setTotalDescuento(totalDescuentosGenerales);
@@ -189,6 +147,7 @@ public class FacturaServiceImpl implements FacturaService {
 
         Factura facturaGuardada = facturaRepository.save(factura);
 
+        // 🔥 SEGUNDO BUCLE: Registrar movimiento de inventario (Kardex) y vincular detalle a factura
         for (DetalleFactura detalle : detallesParaGuardar) {
             detalle.setFactura(facturaGuardada);
 
@@ -199,25 +158,10 @@ public class FacturaServiceImpl implements FacturaService {
             egresoVenta.setCantidad(detalle.getCantidad());
             egresoVenta.setMotivo("Venta según Factura #" + facturaGuardada.getNumeroFactura());
 
-            // Egreso de inventario (actualiza stock y puede devolver costo de la tx)
-            TransaccionInventarioResponseDTO respuestaTx =
-                    transaccionService.registrarTransaccion(negocioId, emailUsuario, egresoVenta);
+            TransaccionInventarioResponseDTO respuestaTx = transaccionService.registrarTransaccion(negocioId, emailUsuario, egresoVenta);
 
-            // Prioridad del costo en la factura:
-            // 1) costoPromedioActual del producto (ya seteado arriba)
-            // 2) costo que devuelve la transacción de inventario si el producto no tenía promedio
-            BigDecimal costoUnit = detalle.getCostoUnitarioReal();
-            if (costoUnit == null || costoUnit.compareTo(BigDecimal.ZERO) <= 0) {
-                if (respuestaTx.getCostoUnitario() != null
-                        && respuestaTx.getCostoUnitario().compareTo(BigDecimal.ZERO) > 0) {
-                    costoUnit = respuestaTx.getCostoUnitario();
-                } else {
-                    costoUnit = BigDecimal.ZERO;
-                }
-            }
-            BigDecimal cantBd = new BigDecimal(detalle.getCantidad());
-            detalle.setCostoUnitarioReal(costoUnit);
-            detalle.setCostoTotalReal(costoUnit.multiply(cantBd).setScale(2, RoundingMode.HALF_UP));
+            detalle.setCostoUnitarioReal(respuestaTx.getCostoUnitario());
+            detalle.setCostoTotalReal(respuestaTx.getCostoTotal());
 
             detalleFacturaRepository.save(detalle);
         }
