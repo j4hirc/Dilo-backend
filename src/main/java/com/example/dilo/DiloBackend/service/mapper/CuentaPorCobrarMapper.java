@@ -26,6 +26,26 @@ public class CuentaPorCobrarMapper {
         dto.setSaldoPendiente(cuenta.getSaldoPendiente());
         dto.setEstado(cuenta.getEstado());
 
+        if (cuenta.getFactura() != null && cuenta.getFactura().getCliente() != null) {
+            var cli = cuenta.getFactura().getCliente();
+
+            String primer = cli.getPrimerNombre() != null ? cli.getPrimerNombre().trim() : "";
+            String apellido = cli.getApellidoPaterno() != null ? cli.getApellidoPaterno().trim() : "";
+            String nombre = (primer + " " + apellido).trim();
+            if (nombre.isEmpty()) {
+                nombre = "Sin nombre";
+            }
+
+            String dni = cli.getDni() != null ? cli.getDni().trim() : "";
+            if (!dni.isEmpty()) {
+                dto.setNombreCliente(nombre + " (" + dni + ")");
+            } else {
+                dto.setNombreCliente(nombre);
+            }
+        } else {
+            dto.setNombreCliente("Consumidor Final");
+        }
+
         if (cuenta.getCuotas() != null && !cuenta.getCuotas().isEmpty()) {
             List<CuotaResponseDTO> cuotasDto = cuenta.getCuotas().stream()
                     .map(this::toCuotaDto)

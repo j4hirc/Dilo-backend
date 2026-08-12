@@ -15,4 +15,5 @@ public class CuentaPorCobrarResponseDTO {
     private BigDecimal saldoPendiente;
     private String estado;
     private List<CuotaResponseDTO> cuotas;
+    private String nombreCliente;
 }
