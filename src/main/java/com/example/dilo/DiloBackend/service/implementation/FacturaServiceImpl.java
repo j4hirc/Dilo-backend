@@ -86,12 +86,17 @@ public class FacturaServiceImpl implements FacturaService {
                         + ". Disponible: " + inventario.getCantidadActual());
             }
 
-            // 🔥 PRECIO DE VENTA (PVP) — NUNCA el costo promedio
-            // El costo promedio solo se usa en el egreso de inventario (COGS).
+            // 🔥 PRECIO DE VENTA = PVP (precioUnitario). El cliente paga el PVP.
             BigDecimal precio = producto.getPrecioUnitario();
             if (precio == null || precio.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new RuntimeException(
                         "El producto '" + producto.getNombre() + "' no tiene precio de venta (PVP) configurado.");
+            }
+
+            // 🔥 COSTO PROMEDIO del producto → se guarda en el detalle (COGS / costeo de la factura)
+            BigDecimal costoPromedio = producto.getCostoPromedioActual();
+            if (costoPromedio == null || costoPromedio.compareTo(BigDecimal.ZERO) < 0) {
+                costoPromedio = BigDecimal.ZERO;
             }
 
             BigDecimal cantidad = new BigDecimal(dto.getCantidad());
@@ -108,7 +113,7 @@ public class FacturaServiceImpl implements FacturaService {
                         "El descuento no puede ser mayor al valor total del producto: " + producto.getNombre());
             }
 
-            // Precios se tratan SIN IVA incluido (base + IVA = total)
+            // Precios se tratan SIN IVA incluido (base + IVA = total) — sobre el PVP
             if (Boolean.TRUE.equals(producto.getGrabaIva())) {
                 subtotalIvaAplicado = subtotalIvaAplicado.add(subtotalItem);
             } else {
@@ -123,9 +128,13 @@ public class FacturaServiceImpl implements FacturaService {
             bodega.setId(dto.getBodegaId());
             detalle.setBodega(bodega);
             detalle.setCantidad(dto.getCantidad());
-            detalle.setPrecioUnitario(precio); // PVP
+            detalle.setPrecioUnitario(precio); // PVP (lo que cobra)
             detalle.setDescuento(descuentoItem);
             detalle.setSubtotalItem(subtotalItem);
+            // Costo promedio ya en el detalle (se confirma tras el egreso)
+            detalle.setCostoUnitarioReal(costoPromedio);
+            detalle.setCostoTotalReal(
+                    costoPromedio.multiply(cantidad).setScale(2, RoundingMode.HALF_UP));
 
             detallesParaGuardar.add(detalle);
         }
@@ -190,12 +199,25 @@ public class FacturaServiceImpl implements FacturaService {
             egresoVenta.setCantidad(detalle.getCantidad());
             egresoVenta.setMotivo("Venta según Factura #" + facturaGuardada.getNumeroFactura());
 
-            // Aquí el backend de inventario aplica el método de costeo (promedio/FIFO/LIFO)
+            // Egreso de inventario (actualiza stock y puede devolver costo de la tx)
             TransaccionInventarioResponseDTO respuestaTx =
                     transaccionService.registrarTransaccion(negocioId, emailUsuario, egresoVenta);
 
-            detalle.setCostoUnitarioReal(respuestaTx.getCostoUnitario());
-            detalle.setCostoTotalReal(respuestaTx.getCostoTotal());
+            // Prioridad del costo en la factura:
+            // 1) costoPromedioActual del producto (ya seteado arriba)
+            // 2) costo que devuelve la transacción de inventario si el producto no tenía promedio
+            BigDecimal costoUnit = detalle.getCostoUnitarioReal();
+            if (costoUnit == null || costoUnit.compareTo(BigDecimal.ZERO) <= 0) {
+                if (respuestaTx.getCostoUnitario() != null
+                        && respuestaTx.getCostoUnitario().compareTo(BigDecimal.ZERO) > 0) {
+                    costoUnit = respuestaTx.getCostoUnitario();
+                } else {
+                    costoUnit = BigDecimal.ZERO;
+                }
+            }
+            BigDecimal cantBd = new BigDecimal(detalle.getCantidad());
+            detalle.setCostoUnitarioReal(costoUnit);
+            detalle.setCostoTotalReal(costoUnit.multiply(cantBd).setScale(2, RoundingMode.HALF_UP));
 
             detalleFacturaRepository.save(detalle);
         }
