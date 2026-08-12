@@ -22,4 +22,6 @@ public interface UsuarioService {
 
     void cambiarPassword(String email, ChangePasswordRequestDTO passwordDTO);
 
+    void generarCodigoRecuperacion(String email);
+    void restablecerPasswordConCodigo(String email, String codigo, String nuevaPassword);
 }

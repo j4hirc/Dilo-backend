@@ -108,4 +108,21 @@ public class EmailServiceImpl implements EmailService {
             System.err.println("❌ Error general al enviar correo SMTP: " + e.getMessage());
         }
     }
+
+    @Async
+    @Override
+    public void enviarCodigoRecuperacion(String email, String codigo) {
+        String subject = "🔑 Código de Recuperación - Dilo";
+        String htmlContent = String.format(
+                "<div style='font-family: Arial, sans-serif; text-align: center; color: #333;'>" +
+                        "<h2>Recuperación de Contraseña</h2>" +
+                        "<p>Has solicitado restablecer tu contraseña en el sistema <b>Dilo</b>.</p>" +
+                        "<p>Tu código de verificación es:</p>" +
+                        "<h1 style='color: #ed8936; letter-spacing: 5px; font-size: 32px;'>%s</h1>" +
+                        "<p>Ingresa este código en la pantalla para crear una nueva contraseña.</p>" +
+                        "<br><p style='font-size: 12px; color: #999;'>Si no solicitaste esto, puedes ignorar este correo de forma segura.</p>" +
+                        "</div>", codigo
+        );
+        enviarPeticionSmtp(List.of(email), subject, htmlContent);
+    }
 }

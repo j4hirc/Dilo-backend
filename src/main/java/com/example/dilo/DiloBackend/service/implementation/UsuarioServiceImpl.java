@@ -9,6 +9,7 @@ import com.example.dilo.DiloBackend.model.Parroquia;
 import com.example.dilo.DiloBackend.model.Usuario;
 import com.example.dilo.DiloBackend.repository.ParroquiaRepository;
 import com.example.dilo.DiloBackend.repository.UsuarioRepository;
+import com.example.dilo.DiloBackend.service.EmailService;
 import com.example.dilo.DiloBackend.service.UsuarioService;
 import com.example.dilo.DiloBackend.service.mapper.UsuarioMapper;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +32,8 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final ParroquiaRepository parroquiaRepository;
     private final SupabaseStorageService storageService;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final Map<String, String> codigosRecuperacion = new ConcurrentHashMap<>();
 
     @Override
     public UsuarioResponseDTO obtenerMiPerfil(String email) {
@@ -135,6 +140,33 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         Usuario actualizado = usuarioRepository.save(usuario);
         return usuarioMapper.toDto(actualizado);
+    }
+
+    @Override
+    public void generarCodigoRecuperacion(String email) {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("El correo ingresado no está registrado."));
+
+        String codigo = String.format("%06d", new java.util.Random().nextInt(999999));
+
+        codigosRecuperacion.put(email, codigo);
+        emailService.enviarCodigoRecuperacion(email, codigo);
+    }
+
+    @Override
+    public void restablecerPasswordConCodigo(String email, String codigo, String nuevaPassword) {
+        String codigoGuardado = codigosRecuperacion.get(email);
+
+        if (codigoGuardado == null || !codigoGuardado.equals(codigo)) {
+            throw new IllegalArgumentException("El código es incorrecto o ha expirado.");
+        }
+
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        usuario.setPassword(passwordEncoder.encode(nuevaPassword));
+        usuarioRepository.save(usuario);
+        codigosRecuperacion.remove(email);
     }
 
 }

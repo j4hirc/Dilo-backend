@@ -10,6 +10,7 @@ import com.example.dilo.DiloBackend.repository.UsuarioRepository;
 import com.example.dilo.DiloBackend.security.jwt.JwtGenerator;
 import com.example.dilo.DiloBackend.service.LoginService;
 import com.example.dilo.DiloBackend.service.RegistroService;
+import com.example.dilo.DiloBackend.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -37,6 +38,7 @@ public class AuthController {
     private final LoginService loginService;
     private final JwtGenerator jwtGenerator;
     private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
 
     @PostMapping(value = "/registro", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UsuarioResponseDTO> registrarUsuario(
@@ -84,5 +86,29 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody java.util.Map<String, String> request) {
+        try {
+            usuarioService.generarCodigoRecuperacion(request.get("email"));
+            return ResponseEntity.ok(java.util.Map.of("mensaje", "Código enviado al correo"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody java.util.Map<String, String> request) {
+        try {
+            usuarioService.restablecerPasswordConCodigo(
+                    request.get("email"),
+                    request.get("codigo"),
+                    request.get("nuevaPassword")
+            );
+            return ResponseEntity.ok(java.util.Map.of("mensaje", "Contraseña cambiada con éxito"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
 
 }
