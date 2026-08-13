@@ -19,7 +19,6 @@ public class ProductoRequestDTO {
     @NotBlank(message = "El nombre del producto es obligatorio")
     private String nombre;
 
-    @NotNull(message = "El precio unitario es obligatorio")
     private BigDecimal precioUnitario;
 
     @NotNull(message = "Debe especificar si graba IVA")
