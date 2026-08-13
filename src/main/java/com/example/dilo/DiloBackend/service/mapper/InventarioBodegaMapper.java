@@ -27,15 +27,22 @@ public class InventarioBodegaMapper {
             dto.setBodegaNombre(inventario.getBodega().getNombre());
         }
 
-        dto.setCantidadActual(inventario.getCantidadActual());
-        dto.setStockMinimo(inventario.getStockMinimo());
-        dto.setAlertaStock(inventario.getCantidadActual() <= inventario.getStockMinimo());
+        int cantidad = inventario.getCantidadActual() != null ? inventario.getCantidadActual() : 0;
+        int minimo = inventario.getStockMinimo() != null ? inventario.getStockMinimo() : 0;
+        dto.setCantidadActual(cantidad);
+        dto.setStockMinimo(minimo);
+        dto.setAlertaStock(cantidad <= minimo);
 
-        if (dto.getCostoPromedio() != null && dto.getCantidadActual() != null) {
-            dto.setValorInventario(dto.getCostoPromedio().multiply(new BigDecimal(dto.getCantidadActual())));
-        } else {
-            dto.setValorInventario(BigDecimal.ZERO);
+        BigDecimal costo = dto.getCostoPromedio() != null ? dto.getCostoPromedio() : BigDecimal.ZERO;
+        if (costo.compareTo(BigDecimal.ZERO) < 0) {
+            costo = BigDecimal.ZERO;
         }
+        dto.setCostoPromedio(costo);
+
+        // Valor = costo promedio × cantidad en esta bodega (2 decimales)
+        dto.setValorInventario(
+                costo.multiply(new BigDecimal(cantidad)).setScale(2, java.math.RoundingMode.HALF_UP)
+        );
 
         return dto;
     }

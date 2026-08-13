@@ -118,7 +118,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
 
         Lote loteGuardado = loteRepository.save(nuevoLote);
 
-        recalcularCostoPromedioProducto(producto, cantidad, costoUnitario, inventario.getCantidadActual());
+        recalcularCostoPromedioProducto(producto, cantidad, costoUnitario, negocioId);
 
         transaccion.setCostoUnitario(costoUnitario);
         transaccion.setCostoTotal(costoTotal);
@@ -165,6 +165,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
             ultimoLoteTocado = lote;
         }
 
+        // MODO FLEXIBLE: Evita el Error 500 y asume costo promedio para lotes faltantes
         if (cantidadRequerida > 0) {
             System.out.println("ADVERTENCIA: Inconsistencia de lotes en producto ID " + producto.getId() + ". Faltan " + cantidadRequerida + " unidades en lote.");
 
@@ -218,17 +219,52 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         loteRepository.save(loteTransferido);
     }
 
-    private void recalcularCostoPromedioProducto(Producto producto, BigDecimal cantidadIngresada, BigDecimal costoUnitarioIngreso, int nuevoStockFisicoTotal) {
-        if (nuevoStockFisicoTotal == 0) return;
+    /**
+     * Recalcula el costo promedio del producto usando el stock TOTAL en TODAS las bodegas.
+     * Antes se usaba solo el stock de la bodega del ingreso → números incorrectos
+     * cuando el mismo producto estaba en varias bodegas.
+     *
+     * Fórmula: (stockAnteriorTotal * costoPromAnterior + qtyIngreso * costoIngreso) / stockTotalActual
+     */
+    private void recalcularCostoPromedioProducto(
+            Producto producto,
+            BigDecimal cantidadIngresada,
+            BigDecimal costoUnitarioIngreso,
+            Long negocioId
+    ) {
+        if (cantidadIngresada == null || cantidadIngresada.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        if (costoUnitarioIngreso == null) {
+            costoUnitarioIngreso = BigDecimal.ZERO;
+        }
 
-        BigDecimal stockAnterior = new BigDecimal(nuevoStockFisicoTotal).subtract(cantidadIngresada);
-        BigDecimal costoPromedioAnterior = producto.getCostoPromedioActual() != null ? producto.getCostoPromedioActual() : BigDecimal.ZERO;
+        Integer stockTotalActualInt = inventarioRepository
+                .sumCantidadByProductoAndNegocio(producto.getId(), negocioId);
+        int stockTotalActual = stockTotalActualInt != null ? stockTotalActualInt : 0;
+
+        if (stockTotalActual <= 0) {
+            // Solo quedó el ingreso actual (o stock 0): el promedio es el costo del ingreso
+            producto.setCostoPromedioActual(costoUnitarioIngreso.setScale(4, RoundingMode.HALF_UP));
+            productoRepository.save(producto);
+            return;
+        }
+
+        BigDecimal stockTotalActualBd = new BigDecimal(stockTotalActual);
+        BigDecimal stockAnterior = stockTotalActualBd.subtract(cantidadIngresada);
+        if (stockAnterior.compareTo(BigDecimal.ZERO) < 0) {
+            stockAnterior = BigDecimal.ZERO;
+        }
+
+        BigDecimal costoPromedioAnterior = producto.getCostoPromedioActual() != null
+                ? producto.getCostoPromedioActual()
+                : BigDecimal.ZERO;
 
         BigDecimal valorInventarioAnterior = stockAnterior.multiply(costoPromedioAnterior);
         BigDecimal valorNuevoIngreso = cantidadIngresada.multiply(costoUnitarioIngreso);
 
         BigDecimal nuevoCostoPromedio = valorInventarioAnterior.add(valorNuevoIngreso)
-                .divide(new BigDecimal(nuevoStockFisicoTotal), 4, RoundingMode.HALF_UP);
+                .divide(stockTotalActualBd, 4, RoundingMode.HALF_UP);
 
         producto.setCostoPromedioActual(nuevoCostoPromedio);
         productoRepository.save(producto);

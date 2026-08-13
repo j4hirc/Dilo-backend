@@ -33,4 +33,10 @@ public interface InventarioBodegaRepository extends JpaRepository<InventarioBode
             @Param("productoId") Long productoId,
             @Param("bodegaId") Long bodegaId,
             @Param("negocioId") Long negocioId);
+
+    @Query("SELECT COALESCE(SUM(ib.cantidadActual), 0) FROM InventarioBodega ib " +
+            "WHERE ib.producto.id = :productoId AND ib.negocio.id = :negocioId")
+    Integer sumCantidadByProductoAndNegocio(
+            @Param("productoId") Long productoId,
+            @Param("negocioId") Long negocioId);
 }
