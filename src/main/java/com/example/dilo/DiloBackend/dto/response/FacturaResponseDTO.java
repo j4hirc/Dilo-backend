@@ -19,4 +19,6 @@ public class FacturaResponseDTO {
     private String formaPago;
     private String estadoSri;
     private List<DetalleFacturaResponseDTO> detalles;
+    private BigDecimal totalDescuento;
+    private BigDecimal porcentajeIvaAplicado;
 }

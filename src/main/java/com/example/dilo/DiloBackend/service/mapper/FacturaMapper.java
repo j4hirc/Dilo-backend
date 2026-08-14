@@ -32,6 +32,8 @@ public class FacturaMapper {
         dto.setTotalFactura(factura.getTotalFactura());
         dto.setFormaPago(factura.getFormaPago());
         dto.setEstadoSri(factura.getEstadoSri());
+        dto.setTotalDescuento(factura.getTotalDescuento());
+        dto.setPorcentajeIvaAplicado(factura.getPorcentajeIvaAplicado());
 
         if (detalles != null) {
             List<DetalleFacturaResponseDTO> detallesDto = detalles.stream()

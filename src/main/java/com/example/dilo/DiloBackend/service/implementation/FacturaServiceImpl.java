@@ -107,7 +107,7 @@ public class FacturaServiceImpl implements FacturaService {
                 throw new RuntimeException("El descuento no puede ser mayor al valor total del producto: " + producto.getNombre());
             }
 
-            if (producto.getGrabaIva()) {
+            if (Boolean.TRUE.equals(producto.getGrabaIva())) {
                 subtotalIvaAplicado = subtotalIvaAplicado.add(subtotalItem);
             } else {
                 subtotalIva0 = subtotalIva0.add(subtotalItem);
@@ -128,24 +128,60 @@ public class FacturaServiceImpl implements FacturaService {
             detallesParaGuardar.add(detalle);
         }
 
-        BigDecimal descuentoGlobal = request.getDescuentoGlobal() != null ? request.getDescuentoGlobal() : BigDecimal.ZERO;
-        BigDecimal totalDescuentosGenerales = descuentosItems.add(descuentoGlobal);
+        // ========== DESCUENTO GLOBAL (prorrateado como en el frontend) ==========
+        BigDecimal descuentoGlobal = request.getDescuentoGlobal() != null
+                ? request.getDescuentoGlobal()
+                : BigDecimal.ZERO;
 
-        BigDecimal totalIva = subtotalIvaAplicado.multiply(porcentajeIva).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal totalFactura = subtotalIva0.add(subtotalIvaAplicado).add(totalIva).subtract(descuentoGlobal);
-
-        if (totalFactura.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("El descuento global no puede superar el total de la factura.");
+        if (descuentoGlobal.compareTo(BigDecimal.ZERO) < 0) {
+            descuentoGlobal = BigDecimal.ZERO;
         }
 
+        BigDecimal totalBruto = subtotalIva0.add(subtotalIvaAplicado);
+
+        // No permitir que el descuento global supere el bruto
+        if (descuentoGlobal.compareTo(totalBruto) > 0) {
+            descuentoGlobal = totalBruto;
+        }
+
+        BigDecimal descSobreGravado = BigDecimal.ZERO;
+        BigDecimal descSobreExento = BigDecimal.ZERO;
+
+        if (totalBruto.compareTo(BigDecimal.ZERO) > 0 && descuentoGlobal.compareTo(BigDecimal.ZERO) > 0) {
+            // Prorrateo proporcional
+            descSobreGravado = descuentoGlobal
+                    .multiply(subtotalIvaAplicado)
+                    .divide(totalBruto, 4, RoundingMode.HALF_UP)
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            descSobreExento = descuentoGlobal.subtract(descSobreGravado).setScale(2, RoundingMode.HALF_UP);
+        }
+
+        // Bases netas (después del descuento global)
+        BigDecimal baseImponible = subtotalIvaAplicado.subtract(descSobreGravado).max(BigDecimal.ZERO);
+        BigDecimal baseExenta   = subtotalIva0.subtract(descSobreExento).max(BigDecimal.ZERO);
+
+        // IVA solo sobre la base gravada neta
+        BigDecimal totalIva = baseImponible.multiply(porcentajeIva).setScale(2, RoundingMode.HALF_UP);
+
+        // Total final
+        BigDecimal totalFactura = baseImponible.add(baseExenta).add(totalIva);
+
+        // Total de descuentos (ítems + global) para persistir
+        BigDecimal totalDescuentosGenerales = descuentosItems.add(descuentoGlobal);
+
+        // ========== PERSISTENCIA ==========
         Factura factura = new Factura();
         factura.setNegocio(negocio);
         factura.setCliente(cliente);
         factura.setUsuarioEmisor(usuario);
         factura.setNumeroFactura("TEMP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         factura.setFechaEmision(LocalDateTime.now());
-        factura.setSubtotalIva0(subtotalIva0);
-        factura.setSubtotalIvaAplicado(subtotalIvaAplicado);
+
+        // Guardamos las bases YA netas (después del descuento global)
+        // Así el listado y el PDF coinciden con lo que vio el usuario
+        factura.setSubtotalIva0(baseExenta);
+        factura.setSubtotalIvaAplicado(baseImponible);
         factura.setTotalDescuento(totalDescuentosGenerales);
         factura.setPorcentajeIvaAplicado(porcentajeIva.multiply(new BigDecimal("100")));
         factura.setTotalIva(totalIva);
@@ -172,7 +208,8 @@ public class FacturaServiceImpl implements FacturaService {
             egresosVenta.add(egresoVenta);
         }
 
-        List<TransaccionInventarioResponseDTO> respuestasTx = transaccionService.registrarEgresosBatch(negocioId, emailUsuario, egresosVenta);
+        List<TransaccionInventarioResponseDTO> respuestasTx =
+                transaccionService.registrarEgresosBatch(negocioId, emailUsuario, egresosVenta);
 
         for (int i = 0; i < detallesParaGuardar.size(); i++) {
             detallesParaGuardar.get(i).setCostoUnitarioReal(respuestasTx.get(i).getCostoUnitario());
