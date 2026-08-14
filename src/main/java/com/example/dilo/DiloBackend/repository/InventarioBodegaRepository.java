@@ -2,9 +2,9 @@ package com.example.dilo.DiloBackend.repository;
 
 import com.example.dilo.DiloBackend.model.InventarioBodega;
 import jakarta.persistence.Entity;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
@@ -25,6 +25,8 @@ public interface InventarioBodegaRepository extends JpaRepository<InventarioBode
             @Param("negocioId") Long negocioId,
             @Param("productoId") Long productoId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints({@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000")}) // 3000 ms = 3 segundos
     @Query("SELECT ib FROM InventarioBodega ib JOIN FETCH ib.producto JOIN FETCH ib.bodega " +
             "WHERE ib.negocio.id = :negocioId AND ib.bodega.id IN :bodegaIds AND ib.producto.id IN :productoIds")
     List<InventarioBodega> findByNegocioBodegasAndProductos(
@@ -41,9 +43,13 @@ public interface InventarioBodegaRepository extends JpaRepository<InventarioBode
             @Param("bodegaId") Long bodegaId,
             @Param("negocioId") Long negocioId);
 
+
+
     @Query("SELECT COALESCE(SUM(ib.cantidadActual), 0) FROM InventarioBodega ib " +
             "WHERE ib.producto.id = :productoId AND ib.negocio.id = :negocioId")
     Integer sumCantidadByProductoAndNegocio(
             @Param("productoId") Long productoId,
             @Param("negocioId") Long negocioId);
+
+
 }

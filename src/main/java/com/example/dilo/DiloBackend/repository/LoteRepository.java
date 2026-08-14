@@ -1,8 +1,12 @@
 package com.example.dilo.DiloBackend.repository;
 
 import com.example.dilo.DiloBackend.model.Lote;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -35,6 +39,8 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
     List<Lote> findLotesProximosAVencer(@Param("negocioId") Long negocioId,
                                         @Param("fechaLimite") LocalDate fechaLimite);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints({@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000")})
     @Query("SELECT l FROM Lote l WHERE l.negocio.id = :negocioId " +
             "AND l.bodega.id IN :bodegaIds AND l.producto.id IN :productoIds AND l.estado = 'ACTIVO'")
     List<Lote> findLotesActivosBatch(
