@@ -35,6 +35,13 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
     List<Lote> findLotesProximosAVencer(@Param("negocioId") Long negocioId,
                                         @Param("fechaLimite") LocalDate fechaLimite);
 
+    @Query("SELECT l FROM Lote l WHERE l.negocio.id = :negocioId " +
+            "AND l.bodega.id IN :bodegaIds AND l.producto.id IN :productoIds AND l.estado = 'ACTIVO'")
+    List<Lote> findLotesActivosBatch(
+            @Param("negocioId") Long negocioId,
+            @Param("bodegaIds") List<Long> bodegaIds,
+            @Param("productoIds") List<Long> productoIds);
+
     long countByNegocioId(Long negocioId);
 
     Lote findFirstByProductoIdAndNegocioIdOrderByFechaIngresoDesc(Long productoId, Long negocioId);

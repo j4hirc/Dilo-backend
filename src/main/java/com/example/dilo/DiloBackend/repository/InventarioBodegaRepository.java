@@ -25,6 +25,13 @@ public interface InventarioBodegaRepository extends JpaRepository<InventarioBode
             @Param("negocioId") Long negocioId,
             @Param("productoId") Long productoId);
 
+    @Query("SELECT ib FROM InventarioBodega ib JOIN FETCH ib.producto JOIN FETCH ib.bodega " +
+            "WHERE ib.negocio.id = :negocioId AND ib.bodega.id IN :bodegaIds AND ib.producto.id IN :productoIds")
+    List<InventarioBodega> findByNegocioBodegasAndProductos(
+            @Param("negocioId") Long negocioId,
+            @Param("bodegaIds") List<Long> bodegaIds,
+            @Param("productoIds") List<Long> productoIds);
+
     @Query("SELECT ib FROM InventarioBodega ib JOIN FETCH ib.producto JOIN FETCH ib.bodega WHERE ib.id = :id AND ib.negocio.id = :negocioId")
     Optional<InventarioBodega> findByIdAndNegocioId(@Param("id") Long id, @Param("negocioId") Long negocioId);
 

@@ -9,4 +9,5 @@ public interface TransaccionInventarioService {
     List<TransaccionInventarioResponseDTO> obtenerKardexGeneral(Long negocioId);
     List<TransaccionInventarioResponseDTO> obtenerKardexPorProducto(Long negocioId, Long productoId);
     TransaccionInventarioResponseDTO registrarTransaccion(Long negocioId, String emailUsuario, TransaccionInventarioRequestDTO requestDTO);
+    List<TransaccionInventarioResponseDTO> registrarEgresosBatch(Long negocioId, String emailUsuario, List<TransaccionInventarioRequestDTO> requests);
 }

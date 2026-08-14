@@ -23,7 +23,9 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -64,14 +66,24 @@ public class FacturaServiceImpl implements FacturaService {
 
         BigDecimal subtotalIva0 = BigDecimal.ZERO;
         BigDecimal subtotalIvaAplicado = BigDecimal.ZERO;
-        BigDecimal descuentosItems = BigDecimal.ZERO; // Suma de los descuentos individuales
+        BigDecimal descuentosItems = BigDecimal.ZERO;
 
         List<DetalleFactura> detallesParaGuardar = new ArrayList<>();
 
-        // 🔥 PRIMER BUCLE: Validamos stock y calculamos los subtotales con descuento de cada producto
+        List<Long> productoIds = request.getDetalles().stream()
+                .map(DetalleFacturaRequestDTO::getProductoId)
+                .distinct()
+                .toList();
+
+        Map<Long, Producto> productosMap = productoRepository.findAllById(productoIds).stream()
+                .collect(Collectors.toMap(Producto::getId, p -> p));
+
         for (DetalleFacturaRequestDTO dto : request.getDetalles()) {
-            Producto producto = productoRepository.findById(dto.getProductoId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado: " + dto.getProductoId()));
+
+            Producto producto = productosMap.get(dto.getProductoId());
+            if (producto == null) {
+                throw new ResourceNotFoundException("Producto no encontrado: " + dto.getProductoId());
+            }
 
             InventarioBodega inventario = inventarioRepository
                     .findByBodegaIdAndNegocioIdAndProductoId(dto.getBodegaId(), negocioId, producto.getId())
@@ -116,9 +128,8 @@ public class FacturaServiceImpl implements FacturaService {
             detallesParaGuardar.add(detalle);
         }
 
-        // 🔥 CÁLCULOS GLOBALES (IVA y Descuento extra)
         BigDecimal descuentoGlobal = request.getDescuentoGlobal() != null ? request.getDescuentoGlobal() : BigDecimal.ZERO;
-        BigDecimal totalDescuentosGenerales = descuentosItems.add(descuentoGlobal); // Sumamos todos los descuentos para guardarlos en la BD
+        BigDecimal totalDescuentosGenerales = descuentosItems.add(descuentoGlobal);
 
         BigDecimal totalIva = subtotalIvaAplicado.multiply(porcentajeIva).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalFactura = subtotalIva0.add(subtotalIvaAplicado).add(totalIva).subtract(descuentoGlobal);
@@ -127,7 +138,6 @@ public class FacturaServiceImpl implements FacturaService {
             throw new RuntimeException("El descuento global no puede superar el total de la factura.");
         }
 
-        // 🔥 CREAR FACTURA
         Factura factura = new Factura();
         factura.setNegocio(negocio);
         factura.setCliente(cliente);
@@ -147,7 +157,8 @@ public class FacturaServiceImpl implements FacturaService {
 
         Factura facturaGuardada = facturaRepository.save(factura);
 
-        // 🔥 SEGUNDO BUCLE: Registrar movimiento de inventario (Kardex) y vincular detalle a factura
+        List<TransaccionInventarioRequestDTO> egresosVenta = new ArrayList<>();
+
         for (DetalleFactura detalle : detallesParaGuardar) {
             detalle.setFactura(facturaGuardada);
 
@@ -158,13 +169,17 @@ public class FacturaServiceImpl implements FacturaService {
             egresoVenta.setCantidad(detalle.getCantidad());
             egresoVenta.setMotivo("Venta según Factura #" + facturaGuardada.getNumeroFactura());
 
-            TransaccionInventarioResponseDTO respuestaTx = transaccionService.registrarTransaccion(negocioId, emailUsuario, egresoVenta);
-
-            detalle.setCostoUnitarioReal(respuestaTx.getCostoUnitario());
-            detalle.setCostoTotalReal(respuestaTx.getCostoTotal());
-
-            detalleFacturaRepository.save(detalle);
+            egresosVenta.add(egresoVenta);
         }
+
+        List<TransaccionInventarioResponseDTO> respuestasTx = transaccionService.registrarEgresosBatch(negocioId, emailUsuario, egresosVenta);
+
+        for (int i = 0; i < detallesParaGuardar.size(); i++) {
+            detallesParaGuardar.get(i).setCostoUnitarioReal(respuestasTx.get(i).getCostoUnitario());
+            detallesParaGuardar.get(i).setCostoTotalReal(respuestasTx.get(i).getCostoTotal());
+        }
+
+        detalleFacturaRepository.saveAll(detallesParaGuardar);
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override

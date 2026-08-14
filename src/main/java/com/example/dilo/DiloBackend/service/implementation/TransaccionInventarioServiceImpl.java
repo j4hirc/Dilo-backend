@@ -15,7 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -87,6 +88,116 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
 
         TransaccionInventario guardada = transaccionRepository.save(transaccion);
         return transaccionMapper.toDto(guardada);
+    }
+
+    @Override
+    @Transactional
+    public List<TransaccionInventarioResponseDTO> registrarEgresosBatch(Long negocioId, String emailUsuario, List<TransaccionInventarioRequestDTO> requests) {
+        if (requests == null || requests.isEmpty()) return new ArrayList<>();
+
+        Negocio negocio = negocioRepository.findById(negocioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
+
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario responsable no encontrado"));
+
+        String metodoCosteo = (negocio.getMetodoCosteo() != null) ? negocio.getMetodoCosteo() : "PROMEDIO";
+
+        List<Long> productoIds = requests.stream().map(TransaccionInventarioRequestDTO::getProductoId).distinct().toList();
+        List<Long> bodegaIds = requests.stream().map(TransaccionInventarioRequestDTO::getBodegaOrigenId).distinct().toList();
+
+        Map<Long, Producto> productosMap = productoRepository.findAllById(productoIds).stream()
+                .collect(Collectors.toMap(Producto::getId, p -> p));
+
+        Map<Long, Bodega> bodegasMap = bodegaRepository.findAllById(bodegaIds).stream()
+                .collect(Collectors.toMap(Bodega::getId, b -> b));
+
+        Map<String, InventarioBodega> inventariosMap = inventarioRepository
+                .findByNegocioBodegasAndProductos(negocioId, bodegaIds, productoIds).stream()
+                .collect(Collectors.toMap(i -> i.getBodega().getId() + "_" + i.getProducto().getId(), i -> i));
+
+        Map<String, List<Lote>> lotesMap = loteRepository
+                .findLotesActivosBatch(negocioId, bodegaIds, productoIds).stream()
+                .collect(Collectors.groupingBy(l -> l.getBodega().getId() + "_" + l.getProducto().getId()));
+
+        List<TransaccionInventario> transaccionesParaGuardar = new ArrayList<>();
+        Set<InventarioBodega> inventariosParaGuardar = new HashSet<>();
+        Set<Lote> lotesParaGuardar = new HashSet<>();
+
+        for (TransaccionInventarioRequestDTO dto : requests) {
+            Producto producto = productosMap.get(dto.getProductoId());
+            Bodega bodegaOrigen = bodegasMap.get(dto.getBodegaOrigenId());
+            String key = dto.getBodegaOrigenId() + "_" + dto.getProductoId();
+
+            InventarioBodega inventario = inventariosMap.get(key);
+            if (inventario == null || inventario.getCantidadActual() < dto.getCantidad()) {
+                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre());
+            }
+
+            List<Lote> lotesDisponibles = lotesMap.getOrDefault(key, new ArrayList<>());
+            if ("LIFO".equals(metodoCosteo)) {
+                lotesDisponibles.sort((a, b) -> b.getFechaIngreso().compareTo(a.getFechaIngreso())); // DESC
+            } else {
+                lotesDisponibles.sort(Comparator.comparing(Lote::getFechaIngreso)); // ASC
+            }
+
+            int cantidadRequerida = dto.getCantidad();
+            BigDecimal costoTotalEgreso = BigDecimal.ZERO;
+            Lote ultimoLoteTocado = null;
+
+            for (Lote lote : lotesDisponibles) {
+                if (cantidadRequerida <= 0) break;
+                if (lote.getCantidadDisponible().compareTo(BigDecimal.ZERO) <= 0) continue; // Saltar si ya se agotó en RAM
+
+                int cantidadEnLote = lote.getCantidadDisponible().intValue();
+                int cantidadATomar = Math.min(cantidadRequerida, cantidadEnLote);
+
+                lote.setCantidadDisponible(lote.getCantidadDisponible().subtract(new BigDecimal(cantidadATomar)));
+                if (lote.getCantidadDisponible().compareTo(BigDecimal.ZERO) == 0) {
+                    lote.setEstado("AGOTADO");
+                }
+                lotesParaGuardar.add(lote);
+
+                BigDecimal costoAAplicar = "PROMEDIO".equals(metodoCosteo) ? producto.getCostoPromedioActual() : lote.getCostoUnitario();
+                costoTotalEgreso = costoTotalEgreso.add(costoAAplicar.multiply(new BigDecimal(cantidadATomar)));
+
+                cantidadRequerida -= cantidadATomar;
+                ultimoLoteTocado = lote;
+            }
+
+            if (cantidadRequerida > 0) {
+                System.out.println("ADVERTENCIA: Inconsistencia de lotes en producto ID " + producto.getId() + ". Faltan " + cantidadRequerida);
+                BigDecimal costoFaltante = producto.getCostoPromedioActual() != null ? producto.getCostoPromedioActual() : BigDecimal.ZERO;
+                costoTotalEgreso = costoTotalEgreso.add(costoFaltante.multiply(new BigDecimal(cantidadRequerida)));
+            }
+
+            inventario.setCantidadActual(inventario.getCantidadActual() - dto.getCantidad());
+            inventariosParaGuardar.add(inventario);
+
+            TransaccionInventario transaccion = transaccionMapper.toEntity(dto);
+            transaccion.setNegocio(negocio);
+            transaccion.setProducto(producto);
+            transaccion.setBodegaOrigen(bodegaOrigen);
+            transaccion.setUsuarioResponsable(usuario);
+            transaccion.setFechaTransaccion(LocalDateTime.now());
+            transaccion.setMetodoAplicado(metodoCosteo);
+            transaccion.setTipo("EGRESO");
+            transaccion.setCantidad(dto.getCantidad());
+            transaccion.setMotivo(dto.getMotivo());
+            transaccion.setCostoTotal(costoTotalEgreso);
+            transaccion.setCostoUnitario(costoTotalEgreso.divide(new BigDecimal(dto.getCantidad()), 4, RoundingMode.HALF_UP));
+            transaccion.setLote(ultimoLoteTocado);
+
+            transaccionesParaGuardar.add(transaccion);
+
+            verificarStockCritico(inventario, negocioId);
+        }
+
+        loteRepository.saveAll(lotesParaGuardar);
+        inventarioRepository.saveAll(inventariosParaGuardar);
+        List<TransaccionInventario> guardadas = transaccionRepository.saveAll(transaccionesParaGuardar);
+
+        return guardadas.stream().map(transaccionMapper::toDto).toList();
     }
 
     private void procesarIngreso(TransaccionInventario transaccion, TransaccionInventarioRequestDTO dto, Long negocioId, Producto producto) {
@@ -165,7 +276,6 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
             ultimoLoteTocado = lote;
         }
 
-        // MODO FLEXIBLE: Evita el Error 500 y asume costo promedio para lotes faltantes
         if (cantidadRequerida > 0) {
             System.out.println("ADVERTENCIA: Inconsistencia de lotes en producto ID " + producto.getId() + ". Faltan " + cantidadRequerida + " unidades en lote.");
 
@@ -219,13 +329,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         loteRepository.save(loteTransferido);
     }
 
-    /**
-     * Recalcula el costo promedio del producto usando el stock TOTAL en TODAS las bodegas.
-     * Antes se usaba solo el stock de la bodega del ingreso → números incorrectos
-     * cuando el mismo producto estaba en varias bodegas.
-     *
-     * Fórmula: (stockAnteriorTotal * costoPromAnterior + qtyIngreso * costoIngreso) / stockTotalActual
-     */
+
     private void recalcularCostoPromedioProducto(
             Producto producto,
             BigDecimal cantidadIngresada,
@@ -244,7 +348,6 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         int stockTotalActual = stockTotalActualInt != null ? stockTotalActualInt : 0;
 
         if (stockTotalActual <= 0) {
-            // Solo quedó el ingreso actual (o stock 0): el promedio es el costo del ingreso
             producto.setCostoPromedioActual(costoUnitarioIngreso.setScale(4, RoundingMode.HALF_UP));
             productoRepository.save(producto);
             return;
@@ -310,4 +413,6 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
             );
         }
     }
+
+
 }
