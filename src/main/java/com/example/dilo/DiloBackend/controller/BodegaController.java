@@ -20,7 +20,7 @@ public class BodegaController {
     private final BodegaService bodegaService;
 
     @GetMapping
-    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'BODEGUERO')")
     public ResponseEntity<List<BodegaResponseDTO>> obtenerBodegas(@PathVariable Long negocioId) {
         return ResponseEntity.ok(bodegaService.obtenerPorNegocio(negocioId));
     }
