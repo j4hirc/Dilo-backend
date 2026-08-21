@@ -8,6 +8,7 @@ import java.util.List;
 @Data
 public class FacturaResponseDTO {
     private Long id;
+    private Long clienteId;
     private String numeroFactura;
     private LocalDateTime fechaEmision;
     private String clienteNombre;

@@ -2,6 +2,7 @@ package com.example.dilo.DiloBackend.service.mapper;
 
 import com.example.dilo.DiloBackend.dto.response.DetalleFacturaResponseDTO;
 import com.example.dilo.DiloBackend.dto.response.FacturaResponseDTO;
+import com.example.dilo.DiloBackend.model.Cliente;
 import com.example.dilo.DiloBackend.model.DetalleFactura;
 import com.example.dilo.DiloBackend.model.Factura;
 import org.springframework.stereotype.Component;
@@ -17,15 +18,18 @@ public class FacturaMapper {
         dto.setId(factura.getId());
         dto.setNumeroFactura(factura.getNumeroFactura());
         dto.setFechaEmision(factura.getFechaEmision());
-        if (factura.getCliente() != null) {
-            String nombre = factura.getCliente().getPrimerNombre() != null ? factura.getCliente().getPrimerNombre() : "";
-            String apellido = factura.getCliente().getApellidoPaterno() != null ? factura.getCliente().getApellidoPaterno() : "";
-            dto.setClienteNombre((nombre + " " + apellido).trim());
-            dto.setClienteIdentificacion(factura.getCliente().getDni());
+
+        Cliente cli = factura.getCliente();
+        if (cli != null) {
+            dto.setClienteId(cli.getId());
+            dto.setClienteNombre(armarNombreCliente(cli));
+            dto.setClienteIdentificacion(cli.getDni());
         } else {
+            dto.setClienteId(null);
             dto.setClienteNombre("Consumidor Final");
             dto.setClienteIdentificacion("9999999999999");
         }
+
         dto.setSubtotalIva0(factura.getSubtotalIva0());
         dto.setSubtotalIvaAplicado(factura.getSubtotalIvaAplicado());
         dto.setTotalIva(factura.getTotalIva());
@@ -45,16 +49,38 @@ public class FacturaMapper {
         return dto;
     }
 
+    private String armarNombreCliente(Cliente cli) {
+        StringBuilder sb = new StringBuilder();
+        appendParte(sb, cli.getPrimerNombre());
+        appendParte(sb, cli.getSegundoNombre());
+        appendParte(sb, cli.getApellidoPaterno());
+        appendParte(sb, cli.getApellidoMaterno());
+        String nombre = sb.toString().trim();
+        if (nombre.isEmpty()) {
+            return "Cliente #" + cli.getId();
+        }
+        return nombre;
+    }
+
+    private void appendParte(StringBuilder sb, String parte) {
+        if (parte == null) return;
+        String t = parte.trim();
+        if (t.isEmpty()) return;
+        if (sb.length() > 0) sb.append(' ');
+        sb.append(t);
+    }
+
     private DetalleFacturaResponseDTO toDetalleDto(DetalleFactura detalle) {
         DetalleFacturaResponseDTO dto = new DetalleFacturaResponseDTO();
         dto.setId(detalle.getId());
-        dto.setProductoNombre(detalle.getProducto().getNombre());
+        if (detalle.getProducto() != null) {
+            dto.setProductoNombre(detalle.getProducto().getNombre());
+        }
         dto.setCantidad(detalle.getCantidad());
         dto.setPrecioUnitario(detalle.getPrecioUnitario());
         dto.setSubtotalItem(detalle.getSubtotalItem());
         dto.setCostoUnitarioReal(detalle.getCostoUnitarioReal());
         dto.setCostoTotalReal(detalle.getCostoTotalReal());
-
         return dto;
     }
 }
