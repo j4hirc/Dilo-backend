@@ -40,7 +40,7 @@ public class InventarioBodegaController {
     }
 
     @PostMapping
-    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'BODEGUERO')")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'BODEGUERO', 'VENDEDOR')")
     public ResponseEntity<InventarioBodegaResponseDTO> inicializarInventario(
             @PathVariable Long negocioId,
             @Valid @RequestBody InventarioBodegaRequestDTO requestDTO) {
@@ -48,7 +48,7 @@ public class InventarioBodegaController {
     }
 
     @PatchMapping("/{id}/stock-minimo")
-    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'BODEGUERO')")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'BODEGUERO', 'VENDEDOR')")
     public ResponseEntity<InventarioBodegaResponseDTO> actualizarStockMinimo(
             @PathVariable Long negocioId,
             @PathVariable Long id,
@@ -84,7 +84,7 @@ public class InventarioBodegaController {
 
 
     @PatchMapping("/{id}/cantidad-actual")
-    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'BODEGUERO')")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'BODEGUERO', 'VENDEDOR')")
     public ResponseEntity<InventarioBodegaResponseDTO> actualizarCantidadActual(
             @PathVariable Long negocioId,
             @PathVariable Long id,

@@ -73,7 +73,7 @@ public class MiembroNegocioController {
     }
 
     @PutMapping("/{miembroId}/rol")
-    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO')")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'VENDEDOR')")
     public ResponseEntity<MiembroNegocioResponseDTO> cambiarRol(
             @PathVariable Long negocioId,
             @PathVariable Long miembroId,

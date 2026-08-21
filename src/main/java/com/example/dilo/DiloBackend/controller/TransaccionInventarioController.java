@@ -35,7 +35,7 @@ public class TransaccionInventarioController {
     }
 
     @PostMapping
-    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'BODEGUERO')")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'BODEGUERO', 'VENDEDOR')")
     public ResponseEntity<TransaccionInventarioResponseDTO> registrarTransaccion(
             @PathVariable Long negocioId,
             @Valid @RequestBody TransaccionInventarioRequestDTO requestDTO,
