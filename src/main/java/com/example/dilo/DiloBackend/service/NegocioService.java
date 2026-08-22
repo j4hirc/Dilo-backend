@@ -21,5 +21,6 @@ public interface NegocioService {
 
     void deleteNegocio(Long id);
 
+    NegocioResponseDTO regenerarCodigoInvitacion(Long id);
 
 }

@@ -90,4 +90,11 @@ public class NegocioController {
 
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+    @PutMapping("/{id}/codigo/regenerar")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO')")
+    public ResponseEntity<NegocioResponseDTO> regenerarCodigo(@PathVariable Long id) {
+        NegocioResponseDTO response = negocioService.regenerarCodigoInvitacion(id);
+        return ResponseEntity.ok(response);
+    }
 }

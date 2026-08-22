@@ -137,4 +137,16 @@ public class NegocioServiceImpl implements NegocioService {
 
         negocioRepository.delete(negocio);
     }
+
+    @Override
+    public NegocioResponseDTO regenerarCodigoInvitacion(Long id) {
+        Negocio negocio = negocioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado con ID: " + id));
+
+        String nuevoCodigo = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        negocio.setCodigoInvitacion(nuevoCodigo);
+
+        Negocio negocioActualizado = negocioRepository.save(negocio);
+        return negocioMapper.toDto(negocioActualizado);
+    }
 }
