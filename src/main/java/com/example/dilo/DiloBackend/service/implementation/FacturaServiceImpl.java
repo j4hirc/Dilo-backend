@@ -21,6 +21,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,7 @@ public class FacturaServiceImpl implements FacturaService {
     private final FacturaMapper facturaMapper;
     private final SriService sriService;
     private final ParametroGlobalRepository parametroGlobalRepository;
+    private static final ZoneId ZONA_ECUADOR = ZoneId.of("America/Guayaquil");
 
     @Override
     @Transactional
@@ -176,7 +178,7 @@ public class FacturaServiceImpl implements FacturaService {
         factura.setCliente(cliente);
         factura.setUsuarioEmisor(usuario);
         factura.setNumeroFactura("TEMP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        factura.setFechaEmision(LocalDateTime.now());
+        factura.setFechaEmision(LocalDateTime.now(ZONA_ECUADOR));
 
         // Guardamos las bases YA netas (después del descuento global)
         // Así el listado y el PDF coinciden con lo que vio el usuario

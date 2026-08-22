@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
     private final EmailService emailService;
     private final MiembroNegocioRepository miembroNegocioRepository;
     private final LoteRepository loteRepository;
+    private static final ZoneId ZONA_ECUADOR = ZoneId.of("America/Guayaquil");
 
     @Override
     @Transactional(readOnly = true)
@@ -65,7 +67,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         transaccion.setNegocio(negocio);
         transaccion.setProducto(producto);
         transaccion.setUsuarioResponsable(usuario);
-        transaccion.setFechaTransaccion(LocalDateTime.now());
+        transaccion.setFechaTransaccion(LocalDateTime.now(ZONA_ECUADOR));
 
         String metodoCosteo = (negocio.getMetodoCosteo() != null) ? negocio.getMetodoCosteo() : "PROMEDIO";
         transaccion.setMetodoAplicado(metodoCosteo);
@@ -179,7 +181,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
             transaccion.setProducto(producto);
             transaccion.setBodegaOrigen(bodegaOrigen);
             transaccion.setUsuarioResponsable(usuario);
-            transaccion.setFechaTransaccion(LocalDateTime.now());
+            transaccion.setFechaTransaccion(LocalDateTime.now(ZONA_ECUADOR));
             transaccion.setMetodoAplicado(metodoCosteo);
             transaccion.setTipo("EGRESO");
             transaccion.setCantidad(dto.getCantidad());
@@ -224,7 +226,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         nuevoLote.setCantidadDisponible(cantidad);
         nuevoLote.setCostoUnitario(costoUnitario);
         nuevoLote.setCostoTotal(costoTotal);
-        nuevoLote.setFechaIngreso(LocalDateTime.now());
+        nuevoLote.setFechaIngreso(LocalDateTime.now(ZONA_ECUADOR));
         nuevoLote.setEstado("ACTIVO");
 
         Lote loteGuardado = loteRepository.save(nuevoLote);
@@ -323,7 +325,7 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
         loteTransferido.setCantidadDisponible(cantidadBD);
         loteTransferido.setCostoUnitario(transaccion.getCostoUnitario());
         loteTransferido.setCostoTotal(transaccion.getCostoTotal());
-        loteTransferido.setFechaIngreso(LocalDateTime.now());
+        loteTransferido.setFechaIngreso(LocalDateTime.now(ZONA_ECUADOR));
         loteTransferido.setEstado("ACTIVO");
 
         loteRepository.save(loteTransferido);

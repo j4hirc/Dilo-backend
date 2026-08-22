@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +33,7 @@ public class CompraServiceImpl implements CompraService {
     private final InventarioBodegaRepository inventarioRepository;
     private final TransaccionInventarioRepository transaccionRepository;
     private final CompraMapper compraMapper;
+    private static final ZoneId ZONA_ECUADOR = ZoneId.of("America/Guayaquil");
 
     @Override
     @Transactional
@@ -55,7 +57,7 @@ public class CompraServiceImpl implements CompraService {
         compra.setProveedor(proveedor);
         compra.setBodegaIngreso(bodega);
         compra.setNumeroComprobante(requestDTO.getNumeroComprobante());
-        compra.setFechaCompra(LocalDateTime.now());
+        compra.setFechaCompra(LocalDateTime.now(ZONA_ECUADOR));
 
         BigDecimal totalCompra = BigDecimal.ZERO;
         List<Lote> lotesGenerados = new ArrayList<>();
