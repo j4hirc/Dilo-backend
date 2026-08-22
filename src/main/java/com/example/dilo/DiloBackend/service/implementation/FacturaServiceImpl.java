@@ -245,4 +245,17 @@ public class FacturaServiceImpl implements FacturaService {
                 })
                 .toList();
     }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public FacturaResponseDTO obtenerFacturaPorId(Long facturaId) {
+        Factura factura = facturaRepository.findById(facturaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada con el ID: " + facturaId));
+
+        List<DetalleFactura> detalles = detalleFacturaRepository.findByFacturaId(factura.getId());
+
+        return facturaMapper.toDto(factura, detalles);
+    }
+
 }

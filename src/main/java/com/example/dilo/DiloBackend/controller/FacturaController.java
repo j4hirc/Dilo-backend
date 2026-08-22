@@ -41,4 +41,14 @@ public class FacturaController {
         List<FacturaResponseDTO> response = facturaService.obtenerFacturasPorNegocio(negocioId);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/{facturaId}")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'VENDEDOR')")
+    public ResponseEntity<FacturaResponseDTO> obtenerFacturaPorId(
+            @PathVariable Long negocioId,
+            @PathVariable Long facturaId) {
+
+        FacturaResponseDTO response = facturaService.obtenerFacturaPorId(facturaId);
+        return ResponseEntity.ok(response);
+    }
 }

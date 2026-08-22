@@ -9,4 +9,6 @@ public interface FacturaService {
     FacturaResponseDTO generarFactura(Long negocioId, String emailUsuario, FacturaRequestDTO requestDTO);
 
     List<FacturaResponseDTO> obtenerFacturasPorNegocio(Long negocioId);
+
+    FacturaResponseDTO obtenerFacturaPorId(Long facturaId);
 }
