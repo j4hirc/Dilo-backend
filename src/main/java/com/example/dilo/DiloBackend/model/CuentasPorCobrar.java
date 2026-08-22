@@ -41,4 +41,8 @@ public class CuentasPorCobrar {
     @OneToMany(mappedBy = "cuentaPorCobrar", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<Cuota> cuotas;
+
+    @OneToMany(mappedBy = "cuentaPorCobrar", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    private List<HistorialAbono> historialAbonos;
 }

@@ -9,7 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/cuentas-por-cobrar")
@@ -33,15 +35,19 @@ public class CuentasPorCobrarController {
     }
 
 
-    @PostMapping("/{cuentaId}/pagar")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR')")
-    public ResponseEntity<String> pagarCuota(
-            @PathVariable Long cuentaId,
-            @Valid @RequestBody PagoCuotaRequestDTO request) {
+    @PostMapping("/{id}/pagar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> registrarPago(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
 
-        cuentaPorCobrarService.registrarPagoCuota(cuentaId, request.getMontoPago());
+        BigDecimal montoPago = new BigDecimal(payload.get("montoPago").toString());
+        String metodoPago = payload.get("metodoPago") != null ? payload.get("metodoPago").toString() : "EFECTIVO";
+        String referencia = payload.get("referencia") != null ? payload.get("referencia").toString() : "";
 
-        return ResponseEntity.ok("Pago registrado exitosamente");
+        String usuarioLogueado = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+
+        cuentaPorCobrarService.registrarPagoCuota(id, montoPago, metodoPago, referencia, usuarioLogueado);
+
+        return ResponseEntity.ok("Pago registrado con éxito");
     }
 
 
