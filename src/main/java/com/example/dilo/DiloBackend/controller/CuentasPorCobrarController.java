@@ -1,9 +1,7 @@
 package com.example.dilo.DiloBackend.controller;
 
-import com.example.dilo.DiloBackend.dto.request.PagoCuotaRequestDTO;
 import com.example.dilo.DiloBackend.dto.response.CuentaPorCobrarResponseDTO;
 import com.example.dilo.DiloBackend.service.CuentaPorCobrarService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,7 +32,6 @@ public class CuentasPorCobrarController {
         return ResponseEntity.ok(response);
     }
 
-
     @PostMapping("/{id}/pagar")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> registrarPago(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
@@ -49,6 +46,4 @@ public class CuentasPorCobrarController {
 
         return ResponseEntity.ok("Pago registrado con éxito");
     }
-
-
 }

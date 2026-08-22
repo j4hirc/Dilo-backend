@@ -16,4 +16,5 @@ public class CuentaPorCobrarResponseDTO {
     private String estado;
     private List<CuotaResponseDTO> cuotas;
     private String nombreCliente;
+    private List<HistorialAbonoResponseDTO> historialAbonos;
 }

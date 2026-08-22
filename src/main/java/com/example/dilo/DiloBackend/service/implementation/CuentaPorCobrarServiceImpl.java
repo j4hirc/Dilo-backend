@@ -17,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,7 +28,6 @@ import java.util.stream.Collectors;
 public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
 
     private final CuentaPorCobrarRepository cuentaRepository;
-
     private final CuentaPorCobrarMapper cuentaMapper;
     private final CuotaRepository cuotaRepository;
     private final HistorialAbonoRepository abonoRepository; // <--- NUEVO
@@ -80,7 +81,7 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
     public List<CuentaPorCobrarResponseDTO> listarPorNegocio(Long negocioId) {
         List<CuentasPorCobrar> cuentas = cuentaRepository.findByNegocioIdOrderByFechaVencimientoAsc(negocioId);
 
-        java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
+        LocalDateTime ahora = LocalDateTime.now();
         boolean huboCambios = false;
 
         for (CuentasPorCobrar cuenta : cuentas) {
@@ -122,7 +123,7 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
         CuentasPorCobrar cuenta = cuentaRepository.findByIdWithCuotas(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cuenta por cobrar no encontrada"));
 
-        java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
+        LocalDateTime ahora = LocalDateTime.now();
         boolean huboCambios = false;
 
         if ("PENDIENTE".equals(cuenta.getEstado()) &&
@@ -176,7 +177,7 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
         // 2. REPARTIR EL DINERO EN LAS CUOTAS
         List<Cuota> cuotasPendientes = cuentaTotal.getCuotas().stream()
                 .filter(c -> !"PAGADA".equals(c.getEstado()))
-                .sorted(java.util.Comparator.comparing(Cuota::getNumeroCuota))
+                .sorted(Comparator.comparing(Cuota::getNumeroCuota))
                 .toList();
 
         BigDecimal abonoRestante = montoPago;
@@ -192,7 +193,7 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
 
             if (cuota.getSaldoPendienteCuota().compareTo(BigDecimal.ZERO) == 0) {
                 cuota.setEstado("PAGADA");
-            } else if (cuota.getFechaVencimiento() != null && cuota.getFechaVencimiento().isBefore(java.time.LocalDateTime.now())) {
+            } else if (cuota.getFechaVencimiento() != null && cuota.getFechaVencimiento().isBefore(LocalDateTime.now())) {
                 cuota.setEstado("VENCIDA");
             } else {
                 cuota.setEstado("PENDIENTE");
@@ -204,7 +205,7 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
 
         if (cuentaTotal.getSaldoPendiente().compareTo(BigDecimal.ZERO) == 0) {
             cuentaTotal.setEstado("PAGADA");
-        } else if (cuentaTotal.getFechaVencimiento() != null && cuentaTotal.getFechaVencimiento().isBefore(java.time.LocalDateTime.now())) {
+        } else if (cuentaTotal.getFechaVencimiento() != null && cuentaTotal.getFechaVencimiento().isBefore(LocalDateTime.now())) {
             cuentaTotal.setEstado("VENCIDA");
         } else {
             cuentaTotal.setEstado("PENDIENTE");

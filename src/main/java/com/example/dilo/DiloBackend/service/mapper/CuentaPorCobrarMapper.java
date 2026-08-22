@@ -2,10 +2,12 @@ package com.example.dilo.DiloBackend.service.mapper;
 
 import com.example.dilo.DiloBackend.dto.response.CuentaPorCobrarResponseDTO;
 import com.example.dilo.DiloBackend.dto.response.CuotaResponseDTO;
+import com.example.dilo.DiloBackend.dto.response.HistorialAbonoResponseDTO; // <-- Importación añadida
 import com.example.dilo.DiloBackend.model.CuentasPorCobrar;
 import com.example.dilo.DiloBackend.model.Cuota;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList; // <-- Importación añadida
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,6 +53,22 @@ public class CuentaPorCobrarMapper {
                     .map(this::toCuotaDto)
                     .collect(Collectors.toList());
             dto.setCuotas(cuotasDto);
+        }
+
+        if (cuenta.getHistorialAbonos() != null && !cuenta.getHistorialAbonos().isEmpty()) {
+            List<HistorialAbonoResponseDTO> abonosDto = cuenta.getHistorialAbonos().stream().map(abono -> {
+                HistorialAbonoResponseDTO abonoDto = new HistorialAbonoResponseDTO();
+                abonoDto.setId(abono.getId());
+                abonoDto.setMontoAbonado(abono.getMontoAbonado());
+                abonoDto.setFechaAbono(abono.getFechaAbono());
+                abonoDto.setMetodoPago(abono.getMetodoPago());
+                abonoDto.setReferencia(abono.getReferencia());
+                abonoDto.setUsuarioRecibio(abono.getUsuarioRecibio());
+                return abonoDto;
+            }).collect(Collectors.toList());
+            dto.setHistorialAbonos(abonosDto);
+        } else {
+            dto.setHistorialAbonos(new ArrayList<>());
         }
 
         return dto;
