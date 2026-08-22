@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -38,6 +39,13 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
             "ORDER BY l.fechaCaducidad ASC")
     List<Lote> findLotesProximosAVencer(@Param("negocioId") Long negocioId,
                                         @Param("fechaLimite") LocalDate fechaLimite);
+
+
+    @Query("SELECT l FROM Lote l WHERE l.estado = 'ACTIVO' " +
+            "AND l.cantidadDisponible > 0 AND l.fechaCaducidad IS NOT NULL " +
+            "AND l.fechaCaducidad <= :hoy")
+    List<Lote> findLotesActivosPorCaducar(@Param("hoy") LocalDateTime hoy);
+
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints({@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000")})

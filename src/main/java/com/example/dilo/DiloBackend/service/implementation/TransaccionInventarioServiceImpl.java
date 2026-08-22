@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -261,6 +262,10 @@ public class TransaccionInventarioServiceImpl implements TransaccionInventarioSe
 
         for (Lote lote : lotesDisponibles) {
             if (cantidadRequerida <= 0) break;
+
+            if (lote.getFechaCaducidad() != null && lote.getFechaCaducidad().isBefore(LocalDate.now(ZONA_ECUADOR))) {
+                continue;
+            }
 
             int cantidadEnLote = lote.getCantidadDisponible().intValue();
             int cantidadATomar = Math.min(cantidadRequerida, cantidadEnLote);
