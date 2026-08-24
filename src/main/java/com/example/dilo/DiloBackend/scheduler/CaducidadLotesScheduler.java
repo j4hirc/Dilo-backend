@@ -31,7 +31,7 @@ public class CaducidadLotesScheduler {
 
     private static final ZoneId ZONA_ECUADOR = ZoneId.of("America/Guayaquil");
 
-    @Scheduled(cron = "0 0 0 * * ?", zone = "America/Guayaquil")
+    @Scheduled(cron = "0 0 */2 * * ?", zone = "America/Guayaquil")
     @Transactional
     public void procesarLotesCaducados() {
         log.info("Iniciando revisión automática de lotes caducados...");
