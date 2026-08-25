@@ -38,7 +38,6 @@ public class Factura {
     @Column(name = "subtotal_iva_aplicado", precision = 10, scale = 2)
     private BigDecimal subtotalIvaAplicado;
 
-    // 🔥 Este campo ya está perfecto para nuestro descuento global + descuentos de items
     @Column(name = "total_descuento", precision = 10, scale = 2)
     private BigDecimal totalDescuento;
 

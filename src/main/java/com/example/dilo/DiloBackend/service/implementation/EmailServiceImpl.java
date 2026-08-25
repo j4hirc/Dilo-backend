@@ -125,4 +125,36 @@ public class EmailServiceImpl implements EmailService {
         );
         enviarPeticionSmtp(List.of(email), subject, htmlContent);
     }
+
+    @Async
+    @Override
+    public void enviarRecordatorioDeuda(String emailCliente, String nombreCliente, String numeroFactura, java.math.BigDecimal saldoPendiente, String detalleProductosHtml, String detalleCuotasHtml) {
+        String subject = "⏳ Recordatorio de Pago Pendiente - Factura #" + numeroFactura;
+
+        String htmlContent = String.format(
+                "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; border: 1px solid #ddd; padding: 20px; border-radius: 10px;'>" +
+                        "<h2 style='color: #d97706; text-align: center;'>Recordatorio de Deuda</h2>" +
+                        "<p>Hola <b>%s</b>,</p>" +
+                        "<p>Te recordamos amablemente que tienes un saldo pendiente de <b style='color: #d97706; font-size: 18px;'>$ %s</b> asociado a la factura <b>#%s</b>.</p>" +
+
+                        "<h3>🛍️ Detalle de tu compra:</h3>" +
+                        "<table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%%; text-align: left;'>" +
+                        "<tr style='background-color: #f3f4f6;'><th>Producto</th><th>Cant.</th><th>Subtotal</th></tr>" +
+                        "%s" +
+                        "</table>" +
+
+                        "<h3>📅 Estado de tus cuotas:</h3>" +
+                        "<table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%%; text-align: left;'>" +
+                        "<tr style='background-color: #f3f4f6;'><th>Nº</th><th>Vencimiento</th><th>Monto</th><th>Saldo</th><th>Estado</th></tr>" +
+                        "%s" +
+                        "</table>" +
+
+                        "<br><p>Por favor, acércate a cancelar o contáctanos si ya realizaste el pago. Si ya pagaste, por favor ignora este mensaje.</p>" +
+                        "<p style='text-align: center; color: #666; font-size: 12px; margin-top: 20px;'>Este es un mensaje automático generado por Dilo.</p>" +
+                        "</div>",
+                nombreCliente, saldoPendiente, numeroFactura, detalleProductosHtml, detalleCuotasHtml
+        );
+
+        enviarPeticionSmtp(List.of(emailCliente), subject, htmlContent);
+    }
 }

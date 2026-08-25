@@ -8,8 +8,10 @@ import com.example.dilo.DiloBackend.model.Factura;
 import com.example.dilo.DiloBackend.model.HistorialAbono;
 import com.example.dilo.DiloBackend.repository.CuentaPorCobrarRepository;
 import com.example.dilo.DiloBackend.repository.CuotaRepository;
+import com.example.dilo.DiloBackend.repository.DetalleFacturaRepository;
 import com.example.dilo.DiloBackend.repository.HistorialAbonoRepository;
 import com.example.dilo.DiloBackend.service.CuentaPorCobrarService;
+import com.example.dilo.DiloBackend.service.EmailService;
 import com.example.dilo.DiloBackend.service.mapper.CuentaPorCobrarMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,7 +32,9 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
     private final CuentaPorCobrarRepository cuentaRepository;
     private final CuentaPorCobrarMapper cuentaMapper;
     private final CuotaRepository cuotaRepository;
-    private final HistorialAbonoRepository abonoRepository; // <--- NUEVO
+    private final HistorialAbonoRepository abonoRepository;
+    private final EmailService emailService;
+    private final DetalleFacturaRepository detalleFacturaRepository;
 
     @Override
     @Transactional
@@ -212,5 +216,78 @@ public class CuentaPorCobrarServiceImpl implements CuentaPorCobrarService {
         }
 
         cuentaRepository.save(cuentaTotal);
+    }
+
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public void enviarRecordatorioPorCorreo(Long cuentaId) {
+        CuentasPorCobrar cuenta = cuentaRepository.findById(cuentaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cuenta por cobrar no encontrada"));
+
+        Factura factura = cuenta.getFactura();
+
+        if (factura == null || factura.getCliente() == null) {
+            throw new RuntimeException("No se puede enviar correo: La factura es de Consumidor Final o no tiene cliente.");
+        }
+        if (factura.getCliente().getEmail() == null || factura.getCliente().getEmail().trim().isEmpty()) {
+            throw new RuntimeException("El cliente no tiene un correo electrónico registrado.");
+        }
+
+        String emailCliente = factura.getCliente().getEmail();
+        String nombreCliente = factura.getCliente().getPrimerNombre() + " " + factura.getCliente().getApellidoPaterno();
+        String numeroFactura = factura.getNumeroFactura();
+
+        var detalles = detalleFacturaRepository.findByFacturaId(factura.getId());
+
+        StringBuilder productosHtml = new StringBuilder();
+        if (detalles != null && !detalles.isEmpty()) {
+            for (var detalle : detalles) {
+                String nombreProd = detalle.getProducto() != null ? detalle.getProducto().getNombre() : "Producto sin nombre";
+
+                productosHtml.append("<tr>")
+                        .append("<td>").append(nombreProd).append("</td>")
+                        .append("<td style='text-align:center;'>").append(detalle.getCantidad()).append("</td>")
+                        .append("<td>$").append(detalle.getSubtotalItem()).append("</td>")
+                        .append("</tr>");
+            }
+        } else {
+            productosHtml.append("<tr><td colspan='3' style='text-align:center;'>Sin detalles registrados</td></tr>");
+        }
+
+        StringBuilder cuotasHtml = new StringBuilder();
+        if (cuenta.getCuotas() != null && !cuenta.getCuotas().isEmpty()) {
+            List<Cuota> cuotasOrdenadas = cuenta.getCuotas().stream()
+                    .sorted(Comparator.comparing(Cuota::getNumeroCuota))
+                    .toList();
+
+            for (Cuota cuota : cuotasOrdenadas) {
+                String color = "PAGADA".equals(cuota.getEstado()) ? "#16a34a" :
+                        "VENCIDA".equals(cuota.getEstado()) ? "#dc2626" : "#ca8a04";
+
+                String fechaStr = cuota.getFechaVencimiento() != null
+                        ? cuota.getFechaVencimiento().toLocalDate().toString()
+                        : "N/A";
+
+                cuotasHtml.append("<tr>")
+                        .append("<td style='text-align:center;'>").append(cuota.getNumeroCuota()).append("</td>")
+                        .append("<td>").append(fechaStr).append("</td>")
+                        .append("<td>$").append(cuota.getMontoCuota()).append("</td>")
+                        .append("<td>$").append(cuota.getSaldoPendienteCuota()).append("</td>")
+                        .append("<td style='color:").append(color).append("; font-weight:bold;'>").append(cuota.getEstado()).append("</td>")
+                        .append("</tr>");
+            }
+        }
+
+        // 4. Enviar el email usando el EmailService
+        emailService.enviarRecordatorioDeuda(
+                emailCliente,
+                nombreCliente,
+                numeroFactura,
+                cuenta.getSaldoPendiente(),
+                productosHtml.toString(),
+                cuotasHtml.toString()
+        );
     }
 }

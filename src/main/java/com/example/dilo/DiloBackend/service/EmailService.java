@@ -1,5 +1,6 @@
 package com.example.dilo.DiloBackend.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface EmailService {
@@ -8,4 +9,6 @@ public interface EmailService {
     void enviarFacturaSri(String emailCliente, String nombreCliente, String numeroFactura, byte[] pdfRide, byte[] xmlComprobante);
 
     void enviarCodigoRecuperacion(String email, String codigo);
+
+    void enviarRecordatorioDeuda(String emailCliente, String nombreCliente, String numeroFactura, BigDecimal saldoPendiente, String detalleProductosHtml, String detalleCuotasHtml);
 }
