@@ -47,6 +47,7 @@ public class CuentasPorCobrarController {
         return ResponseEntity.ok("Pago registrado con éxito");
     }
 
+    //PRUEBA
     @PostMapping("/{id}/recordatorio-email")
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
     public ResponseEntity<String> enviarRecordatorioEmail(@PathVariable Long id) {
