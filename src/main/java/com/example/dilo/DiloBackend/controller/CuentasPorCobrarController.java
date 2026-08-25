@@ -48,7 +48,7 @@ public class CuentasPorCobrarController {
     }
 
     @PostMapping("/{id}/recordatorio-email")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR')")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
     public ResponseEntity<String> enviarRecordatorioEmail(@PathVariable Long id) {
         try {
             cuentaPorCobrarService.enviarRecordatorioPorCorreo(id);
