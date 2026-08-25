@@ -10,12 +10,14 @@ import com.example.dilo.DiloBackend.repository.TransaccionInventarioRepository;
 import com.example.dilo.DiloBackend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 
@@ -32,10 +34,12 @@ public class CaducidadLotesScheduler {
     private static final ZoneId ZONA_ECUADOR = ZoneId.of("America/Guayaquil");
 
     @Scheduled(cron = "0 0 */2 * * ?", zone = "America/Guayaquil")
+    @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void procesarLotesCaducados() {
         log.info("Iniciando revisión automática de lotes caducados...");
-        LocalDateTime hoy = LocalDateTime.now(ZONA_ECUADOR);
+
+        LocalDate hoy = LocalDate.now(ZONA_ECUADOR);
 
         List<Lote> lotesCaducados = loteRepository.findLotesActivosPorCaducar(hoy);
 
@@ -68,7 +72,9 @@ public class CaducidadLotesScheduler {
             transaccion.setBodegaOrigen(lote.getBodega());
             transaccion.setBodegaDestino(null);
             transaccion.setCantidad(cantidadPerdida);
-            transaccion.setFechaTransaccion(hoy);
+
+            transaccion.setFechaTransaccion(java.time.LocalDateTime.now(ZONA_ECUADOR));
+
             transaccion.setMotivo("Baja automática por caducidad");
             transaccion.setNegocio(lote.getNegocio());
 

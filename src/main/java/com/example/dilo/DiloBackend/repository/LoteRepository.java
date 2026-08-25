@@ -44,7 +44,7 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
     @Query("SELECT l FROM Lote l WHERE l.estado = 'ACTIVO' " +
             "AND l.cantidadDisponible > 0 AND l.fechaCaducidad IS NOT NULL " +
             "AND l.fechaCaducidad <= :hoy")
-    List<Lote> findLotesActivosPorCaducar(@Param("hoy") LocalDateTime hoy);
+    List<Lote> findLotesActivosPorCaducar(@Param("hoy") LocalDate hoy);
 
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
