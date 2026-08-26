@@ -36,9 +36,17 @@ public class NegocioController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
-    public ResponseEntity<NegocioResponseDTO> getNegocioById(@PathVariable Long id) {
-        NegocioResponseDTO response = negocioService.findById(id);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> getNegocioById(@PathVariable Long id) {
+        try {
+            NegocioResponseDTO response = negocioService.findById(id);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("suspendido")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of("message", e.getMessage()));
+            }
+            throw e;
+        }
     }
 
     @GetMapping("/search")
