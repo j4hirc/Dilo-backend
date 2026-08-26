@@ -39,6 +39,11 @@ public class LoginServiceImpl implements LoginService {
         Usuario usuario = usuarioRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        if (usuario.isSuspendido()) {
+            throw new RuntimeException("CUENTA_SUSPENDIDA");
+        }
+
+
         List<MiembroNegocio> historialMiembros = miembroNegocioRepository.findByUsuarioId(usuario.getId());
 
         List<MiembroNegocio> miembrosActivos = historialMiembros.stream()

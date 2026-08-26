@@ -56,7 +56,12 @@ public class AuthController {
             AuthResponseDTO response = loginService.loginUsuario(loginDto);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas: " + e.getMessage());
+            if ("CUENTA_SUSPENDIDA".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Tu cuenta ha sido suspendida. Por favor, contáctanos a dilo@dilo-ec.app para más información.");
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Credenciales incorrectas: " + e.getMessage());
         }
     }
 
