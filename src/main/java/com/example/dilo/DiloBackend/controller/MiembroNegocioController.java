@@ -84,7 +84,7 @@ public class MiembroNegocioController {
     }
 
     @PutMapping("/{miembroId}/desactivar")
-    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO')")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
     public ResponseEntity<MiembroNegocioResponseDTO> desactivarMiembro(
             @PathVariable Long negocioId,
             @PathVariable Long miembroId) {
@@ -95,7 +95,7 @@ public class MiembroNegocioController {
 
 
     @PutMapping("/{miembroId}/activar")
-    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO')")
+    @PreAuthorize("@seguridadNegocio.tieneRolEnNegocio(authentication, #negocioId, 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
     public ResponseEntity<MiembroNegocioResponseDTO> activarMiembro(
             @PathVariable Long negocioId,
             @PathVariable Long miembroId) {
