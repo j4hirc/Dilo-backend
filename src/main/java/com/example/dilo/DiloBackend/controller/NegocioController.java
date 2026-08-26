@@ -35,7 +35,7 @@ public class NegocioController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR')")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR', 'BODEGUERO')")
     public ResponseEntity<NegocioResponseDTO> getNegocioById(@PathVariable Long id) {
         NegocioResponseDTO response = negocioService.findById(id);
         return ResponseEntity.ok(response);
