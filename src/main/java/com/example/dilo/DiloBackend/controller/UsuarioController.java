@@ -106,5 +106,15 @@
             return ResponseEntity.ok(Map.of("mensaje", "Contraseña actualizada exitosamente"));
         }
 
+        @PatchMapping("/{id}/suspension")
+        @PreAuthorize("hasAuthority('SUPER_ADMIN')")
+        public ResponseEntity<UsuarioResponseDTO> cambiarEstadoSuspension(
+                @PathVariable Long id,
+                @RequestParam boolean estado) {
+
+            UsuarioResponseDTO response = usuarioService.cambiarEstadoSuspension(id, estado);
+            return ResponseEntity.ok(response);
+        }
+
 
     }

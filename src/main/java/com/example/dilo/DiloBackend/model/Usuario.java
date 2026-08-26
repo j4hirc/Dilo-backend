@@ -50,6 +50,9 @@ public class Usuario {
     @Column(name = "estado_laboral", nullable = false)
     private String estadoLaboral = "Activo";
 
+    @Column(name = "suspendido", nullable = false)
+    private boolean suspendido = false;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_parroquias")
     private Parroquia parroquia;

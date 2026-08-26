@@ -108,6 +108,17 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuarioRepository.save(usuario);
     }
 
+    @Override
+    public UsuarioResponseDTO cambiarEstadoSuspension(Long id, boolean estado) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con el id: " + id));
+
+        usuario.setSuspendido(estado);
+        Usuario usuarioActualizado = usuarioRepository.save(usuario);
+
+        return usuarioMapper.toDto(usuarioActualizado);
+    }
+
 
     @Override
     @Transactional

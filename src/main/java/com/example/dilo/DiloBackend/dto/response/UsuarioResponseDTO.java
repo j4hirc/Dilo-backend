@@ -34,4 +34,6 @@ public class UsuarioResponseDTO {
     private Long id_parroquia;
 
     private String nameParroquia;
+
+    private boolean suspendido;
 }

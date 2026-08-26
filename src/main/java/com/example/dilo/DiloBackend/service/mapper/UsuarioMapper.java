@@ -45,6 +45,7 @@ public class UsuarioMapper {
         usuarioResponseDTO.setDireccion(entity.getDireccion());
         usuarioResponseDTO.setId_parroquia(entity.getParroquia().getId());
         usuarioResponseDTO.setNameParroquia(entity.getParroquia().getNombre());
+        usuarioResponseDTO.setSuspendido(entity.isSuspendido());
         return usuarioResponseDTO;
     }
 
