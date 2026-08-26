@@ -21,6 +21,8 @@ public interface NegocioService {
 
     void deleteNegocio(Long id);
 
+    void abandonarNegocio(Long negocioId, String emailUsuario);
+
     NegocioResponseDTO regenerarCodigoInvitacion(Long id);
 
 }

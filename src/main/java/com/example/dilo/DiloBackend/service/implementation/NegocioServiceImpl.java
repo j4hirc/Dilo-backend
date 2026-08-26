@@ -15,6 +15,7 @@ import com.example.dilo.DiloBackend.service.NegocioService;
 import com.example.dilo.DiloBackend.service.mapper.NegocioMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -37,6 +38,20 @@ public class NegocioServiceImpl implements NegocioService {
         return negocios.stream()
                 .map(negocioMapper::toDto)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public void abandonarNegocio(Long negocioId, String emailUsuario) {
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado en el sistema"));
+
+        MiembroNegocio miembro = miembroNegocioRepository.findByUsuarioId(usuario.getId()).stream()
+                .filter(m -> m.getNegocio().getId().equals(negocioId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("No eres miembro de este negocio"));
+
+        miembroNegocioRepository.delete(miembro);
     }
 
     @Override

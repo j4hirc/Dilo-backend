@@ -49,6 +49,17 @@ public class NegocioController {
         }
     }
 
+    @PutMapping("/{id}/abandonar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> abandonarNegocio(@PathVariable Long id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String emailUsuarioLogueado = authentication.getName();
+
+        negocioService.abandonarNegocio(id, emailUsuarioLogueado);
+
+        return ResponseEntity.ok(java.util.Map.of("mensaje", "Has abandonado el negocio exitosamente"));
+    }
+
     @GetMapping("/search")
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO', 'VENDEDOR')")
     public ResponseEntity<List<NegocioResponseDTO>> searchNegocios(@RequestParam("term") String term) {
