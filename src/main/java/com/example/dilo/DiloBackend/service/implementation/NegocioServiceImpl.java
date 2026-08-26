@@ -45,12 +45,12 @@ public class NegocioServiceImpl implements NegocioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
 
         boolean propietarioOriginalSuspendido = miembroNegocioRepository.findByNegocioId(id).stream()
-                .filter(m -> m.getRol().getNombre().equals("PROPIETARIO"))
+                .filter(m -> m.getRol() != null && "PROPIETARIO".equals(m.getRol().getNombre()))
                 .min(java.util.Comparator.comparing(
                         MiembroNegocio::getFechaVinculacion,
                         java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())
                 ))
-                .map(m -> m.getUsuario().isSuspendido())
+                .map(m -> m.getUsuario() != null && m.getUsuario().isSuspendido())
                 .orElse(false);
 
         if (propietarioOriginalSuspendido) {
