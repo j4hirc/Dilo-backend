@@ -50,7 +50,7 @@ public class Usuario {
     @Column(name = "estado_laboral", nullable = false)
     private String estadoLaboral = "Activo";
 
-    @Column(name = "suspendido", nullable = false)
+    @Column(name = "suspendido", nullable = false, columnDefinition = "boolean default false")
     private boolean suspendido = false;
 
     @ManyToOne(fetch = FetchType.EAGER)
