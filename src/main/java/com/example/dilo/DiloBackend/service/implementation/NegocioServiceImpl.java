@@ -43,6 +43,15 @@ public class NegocioServiceImpl implements NegocioService {
     public NegocioResponseDTO findById(Long id) {
         Negocio negocio = negocioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
+
+        boolean propietarioSuspendido = miembroNegocioRepository.findByNegocioId(id).stream()
+                .filter(m -> m.getRol().getNombre().equals("PROPIETARIO"))
+                .anyMatch(m -> m.getUsuario().isSuspendido());
+
+        if (propietarioSuspendido) {
+            throw new RuntimeException("El propietario de este negocio ha sido suspendido.");
+        }
+
         return negocioMapper.toDto(negocio);
     }
 
