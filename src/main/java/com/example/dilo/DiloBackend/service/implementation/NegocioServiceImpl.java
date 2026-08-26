@@ -44,11 +44,16 @@ public class NegocioServiceImpl implements NegocioService {
         Negocio negocio = negocioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado"));
 
-        boolean propietarioSuspendido = miembroNegocioRepository.findByNegocioId(id).stream()
+        boolean propietarioOriginalSuspendido = miembroNegocioRepository.findByNegocioId(id).stream()
                 .filter(m -> m.getRol().getNombre().equals("PROPIETARIO"))
-                .anyMatch(m -> m.getUsuario().isSuspendido());
+                .min(java.util.Comparator.comparing(
+                        MiembroNegocio::getFechaVinculacion,
+                        java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())
+                ))
+                .map(m -> m.getUsuario().isSuspendido())
+                .orElse(false);
 
-        if (propietarioSuspendido) {
+        if (propietarioOriginalSuspendido) {
             throw new RuntimeException("El propietario de este negocio ha sido suspendido.");
         }
 
