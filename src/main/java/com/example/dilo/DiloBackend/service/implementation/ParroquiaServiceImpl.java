@@ -2,6 +2,7 @@ package com.example.dilo.DiloBackend.service.implementation;
 
 import com.example.dilo.DiloBackend.dto.request.ParroquiaRequestDTO;
 import com.example.dilo.DiloBackend.dto.response.ParroquiaResponseDTO;
+import com.example.dilo.DiloBackend.exception.DuplicateResourceException;
 import com.example.dilo.DiloBackend.exception.ResourceNotFoundException;
 import com.example.dilo.DiloBackend.model.Parroquia;
 import com.example.dilo.DiloBackend.repository.ParroquiaRepository;
@@ -36,7 +37,7 @@ public class ParroquiaServiceImpl implements ParroquiaService {
     @Override
     public ParroquiaResponseDTO crearParroquia(ParroquiaRequestDTO requestDTO) {
         if (parroquiaRepository.existsByNombreIgnoreCase(requestDTO.getNombre())) {
-            throw new RuntimeException("Ya existe una parroquia con el nombre: " + requestDTO.getNombre());
+            throw new DuplicateResourceException("Ya existe una parroquia con el nombre: " + requestDTO.getNombre());
         }
 
         Parroquia parroquia = parroquiaMapper.toEntity(requestDTO);
@@ -51,7 +52,7 @@ public class ParroquiaServiceImpl implements ParroquiaService {
 
         if (!parroquia.getNombre().equalsIgnoreCase(requestDTO.getNombre()) &&
                 parroquiaRepository.existsByNombreIgnoreCase(requestDTO.getNombre())) {
-            throw new RuntimeException("Ya existe otra parroquia con el nombre: " + requestDTO.getNombre());
+            throw new DuplicateResourceException("Ya existe otra parroquia con el nombre: " + requestDTO.getNombre());
         }
 
         parroquia.setNombre(requestDTO.getNombre());
