@@ -21,6 +21,7 @@ public class CuentaPorCobrarMapper {
         if (cuenta.getFactura() != null) {
             dto.setFacturaId(cuenta.getFactura().getId());
             dto.setNumeroFactura(cuenta.getFactura().getNumeroFactura());
+            dto.setFechaEmisionFactura(cuenta.getFactura().getFechaEmision());
         }
 
         dto.setFechaVencimiento(cuenta.getFechaVencimiento());

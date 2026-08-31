@@ -13,6 +13,7 @@ public class CuentaPorCobrarResponseDTO {
     private LocalDateTime fechaVencimiento;
     private BigDecimal montoTotal;
     private BigDecimal saldoPendiente;
+    private LocalDateTime fechaEmisionFactura;
     private String estado;
     private List<CuotaResponseDTO> cuotas;
     private String nombreCliente;
