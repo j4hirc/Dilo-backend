@@ -182,8 +182,6 @@ public class NegocioServiceImpl implements NegocioService {
         entityManager.createNativeQuery("DELETE FROM lote WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM inventario_bodega WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
 
-        entityManager.createNativeQuery("DELETE FROM detalles_compra WHERE compra_id IN (SELECT id FROM compra WHERE negocio_id = :id)").setParameter("id", id).executeUpdate();
-
         entityManager.createNativeQuery("DELETE FROM compra WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
 
         entityManager.createNativeQuery("DELETE FROM productos WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
