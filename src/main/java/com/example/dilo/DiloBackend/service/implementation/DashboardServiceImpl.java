@@ -23,7 +23,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional(readOnly = true)
     public List<AlertaCaducidadResponseDTO> obtenerAlertasCaducidad(Long negocioId, int diasAviso) {
         LocalDate hoy = LocalDate.now();
-        LocalDate fechaLimite = hoy.plusDay s(diasAviso);
+        LocalDate fechaLimite = hoy.plusDays(diasAviso);
 
         List<Lote> lotesEnRiesgo = loteRepository.findLotesProximosAVencer(negocioId, fechaLimite);
 
