@@ -170,30 +170,33 @@ public class NegocioServiceImpl implements NegocioService {
         Negocio negocio = negocioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado con ID: " + id));
 
-
-
         entityManager.createNativeQuery("DELETE FROM historial_abonos WHERE cuenta_por_cobrar_id IN (SELECT id FROM cuentas_por_cobrar WHERE negocio_id = :id)").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM cuotas WHERE cuenta_por_cobrar_id IN (SELECT id FROM cuentas_por_cobrar WHERE negocio_id = :id)").setParameter("id", id).executeUpdate();
 
+        entityManager.createNativeQuery("DELETE FROM cuentas_por_cobrar WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM detalles_factura WHERE factura_id IN (SELECT id FROM facturas WHERE negocio_id = :id)").setParameter("id", id).executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM facturas WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM transacciones_inventario WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+
         entityManager.createNativeQuery("DELETE FROM lote WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM inventario_bodega WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
 
-        entityManager.createNativeQuery("DELETE FROM proveedor_categoria WHERE proveedor_id IN (SELECT id FROM proveedor WHERE negocio_id = :id)").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM detalles_compra WHERE compra_id IN (SELECT id FROM compra WHERE negocio_id = :id)").setParameter("id", id).executeUpdate();
 
-        entityManager.createNativeQuery("DELETE FROM cuentas_por_cobrar WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM facturas WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM compra WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
 
         entityManager.createNativeQuery("DELETE FROM productos WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM proveedor_categoria WHERE proveedor_id IN (SELECT id FROM proveedor WHERE negocio_id = :id)").setParameter("id", id).executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM proveedor WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM categorias WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM bodegas WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM proveedor WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM clientes WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
-
         entityManager.createNativeQuery("DELETE FROM miembros_negocio WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
 
+        entityManager.flush();
         entityManager.clear();
-
         entityManager.createNativeQuery("DELETE FROM negocios WHERE id = :id").setParameter("id", id).executeUpdate();
     }
 
