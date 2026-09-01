@@ -3,9 +3,13 @@ package com.example.dilo.DiloBackend.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -45,6 +49,67 @@ public class Negocio {
 
     @Column(name = "metodo_costeo", length = 20)
     private String metodoCosteo = "PROMEDIO";
+
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<MiembroNegocio> miembros = new ArrayList<>();
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Bodega> bodegas = new ArrayList<>();
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Categoria> categorias = new ArrayList<>();
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Proveedor> proveedores = new ArrayList<>();
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Producto> productos = new ArrayList<>();
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Cliente> clientes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Compra> compras = new ArrayList<>();
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Lote> lotes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<InventarioBodega> inventarios = new ArrayList<>();
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<TransaccionInventario> transacciones = new ArrayList<>();
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Factura> facturas = new ArrayList<>();
+
+    @OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<CuentasPorCobrar> cuentasPorCobrar = new ArrayList<>();
 
     @PrePersist
     public void generarCodigoInvitacion() {
