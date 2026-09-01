@@ -111,7 +111,7 @@ public class NegocioController {
     }
 
     @PutMapping("/{id}/codigo/regenerar")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'PROPIETARIO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<NegocioResponseDTO> regenerarCodigo(@PathVariable Long id) {
         NegocioResponseDTO response = negocioService.regenerarCodigoInvitacion(id);
         return ResponseEntity.ok(response);
