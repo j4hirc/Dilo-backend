@@ -160,6 +160,7 @@ public class NegocioServiceImpl implements NegocioService {
     }
 
     @Override
+    @Transactional
     public void deleteNegocio(Long id) {
         Negocio negocio = negocioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado con ID: " + id));

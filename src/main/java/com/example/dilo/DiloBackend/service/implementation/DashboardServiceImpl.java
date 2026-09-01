@@ -6,6 +6,7 @@ import com.example.dilo.DiloBackend.repository.LoteRepository;
 import com.example.dilo.DiloBackend.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -19,9 +20,10 @@ public class DashboardServiceImpl implements DashboardService {
     private final LoteRepository loteRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<AlertaCaducidadResponseDTO> obtenerAlertasCaducidad(Long negocioId, int diasAviso) {
         LocalDate hoy = LocalDate.now();
-        LocalDate fechaLimite = hoy.plusDays(diasAviso);
+        LocalDate fechaLimite = hoy.plusDay s(diasAviso);
 
         List<Lote> lotesEnRiesgo = loteRepository.findLotesProximosAVencer(negocioId, fechaLimite);
 
