@@ -13,6 +13,8 @@ import com.example.dilo.DiloBackend.repository.RoleRepository;
 import com.example.dilo.DiloBackend.repository.UsuarioRepository;
 import com.example.dilo.DiloBackend.service.NegocioService;
 import com.example.dilo.DiloBackend.service.mapper.NegocioMapper;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,9 @@ public class NegocioServiceImpl implements NegocioService {
     private final RoleRepository roleRepository;
     private final SupabaseStorageService storageService;
     private final NegocioMapper negocioMapper;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public List<NegocioResponseDTO> getAll() {
@@ -165,7 +170,31 @@ public class NegocioServiceImpl implements NegocioService {
         Negocio negocio = negocioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Negocio no encontrado con ID: " + id));
 
-        negocioRepository.delete(negocio);
+
+
+        entityManager.createNativeQuery("DELETE FROM historial_abonos WHERE cuenta_por_cobrar_id IN (SELECT id FROM cuentas_por_cobrar WHERE negocio_id = :id)").setParameter("id", id).executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM transacciones_inventario WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM lote WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM inventario_bodega WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM proveedor_categoria WHERE proveedor_id IN (SELECT id FROM proveedor WHERE negocio_id = :id)").setParameter("id", id).executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM cuentas_por_cobrar WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM facturas WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM compra WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM productos WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM categorias WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM bodegas WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM proveedor WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM clientes WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM miembros_negocio WHERE negocio_id = :id").setParameter("id", id).executeUpdate();
+
+        entityManager.clear();
+
+        entityManager.createNativeQuery("DELETE FROM negocios WHERE id = :id").setParameter("id", id).executeUpdate();
     }
 
     @Override
